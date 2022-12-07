@@ -1,9 +1,9 @@
 {
     "venvPath": "/Users/ryanpilgrim/miniforge3/envs",
     "venv": "ml-project",
-    "include": ["src", "script", "tests"],
-    "exclude": [],
-    "ignore": [],
+    "include": ["rotation_estimation", "script", "tests"],
+    "exclude": ["data", "pytorch3d"],
+    "ignore": ["data", "pytorch3d"],
     "verboseOutput": true,
     "reportTypeshedErrors": true,
     "reportMissingImports": true,
