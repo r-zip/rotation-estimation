@@ -10,6 +10,7 @@ conda env create -f environment.yml
 Then run
 ```bash
 conda activate ml-project
+pip install -e .
 ```
 
 Now you should be able to run the code.
