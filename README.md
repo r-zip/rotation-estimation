@@ -13,3 +13,14 @@ conda activate ml-project
 ```
 
 Now you should be able to run the code.
+
+
+### Workflow
+
+While working on your feature, please create your own branch off main using 
+```bash
+git checkout -b branch-name
+```
+
+Then use git add/commit/push to track your changes, and open a pull request to put your changes in the main branch.
+
