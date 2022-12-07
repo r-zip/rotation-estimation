@@ -1,0 +1,14 @@
+{
+    "venvPath": "/Users/ryanpilgrim/miniforge3/envs",
+    "venv": "ml-project",
+    "include": ["src", "script", "tests"],
+    "exclude": [],
+    "ignore": [],
+    "verboseOutput": true,
+    "reportTypeshedErrors": true,
+    "reportMissingImports": true,
+    "reportMissingTypeStubs": false,
+    "useLibraryCodeForTypes": true,
+    "autoSearchPaths": true,
+    "pythonVersion": "3.10"
+}

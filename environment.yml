@@ -1,0 +1,19 @@
+name: ml-project
+channels:
+  - defaults
+  - pytorch
+dependencies:
+  - python=3.10
+
+  - flake8
+  - mypy
+  - black
+
+  - pytorch=1.12
+  - torchvision
+  - scikit-learn
+  - jupyterlab
+  - matplotlib
+  - pandas
+  - pytest
+  - seaborn
