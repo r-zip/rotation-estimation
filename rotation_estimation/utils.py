@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Optional
 
 import matplotlib.pyplot as plt
@@ -6,7 +7,11 @@ import torch
 from matplotlib.figure import Figure
 
 
-def random_rotations(n: int, seed: Optional[int] = None) -> torch.Tensor:
+def synset_and_model_to_path(synset_id: str, model_id: str) -> Path:
+    return Path(__file__).parents[1] / f"data/ShapeNetCore.v2/{synset_id}/{model_id}"
+
+
+def random_rotation(seed: Optional[int] = None) -> torch.Tensor:
     """
     Generate a random rotation matrix according to the Haar measure on SO(3).
 
@@ -16,36 +21,53 @@ def random_rotations(n: int, seed: Optional[int] = None) -> torch.Tensor:
 
     Args:
         seed: The seed for the random generation.
+
+    Returns:
+        A 3 x 3 torch.Tensor representing a rotation in 3D.
+    """
+    # generate random rotation
+    rng = np.random.default_rng(seed)
+    theta, phi, z = rng.random(3)
+    theta *= 2 * np.pi
+    phi *= 2 * np.pi
+
+    v = np.array(
+        [
+            np.cos(phi) * np.sqrt(z),
+            np.sin(phi) * np.sqrt(z),
+            np.sqrt(1 - z),
+        ]
+    ).reshape(-1, 1)
+
+    # negative Householder matrix from the paper
+    H_neg = 2 * v @ v.T - np.eye(3)
+    R = np.array(
+        [
+            [np.cos(theta), np.sin(theta), 0],
+            [-np.sin(theta), np.cos(theta), 0],
+            [0, 0, 1],
+        ]
+    )
+    return torch.Tensor(H_neg @ R)
+
+
+def random_rotations(n: int, seed: Optional[int] = None) -> torch.Tensor:
+    """
+    Generate n random rotation matrices.
+
+    Args:
+        n: The number of rotations to generate.
+        seed: The seed to the RNG.
+
+    Returns:
+        An (n x 3 x 3) torch.Tensor, representing n 3x3 rotation matrices.
     """
     # TODO: vectorize
     matrices = []
     for _ in range(n):
-        # generate random rotation
-        rng = np.random.default_rng(seed)
-        theta, phi, z = rng.random(3)
-        theta *= 2 * np.pi
-        phi *= 2 * np.pi
+        matrices.append(random_rotation())
 
-        v = np.array(
-            [
-                np.cos(phi) * np.sqrt(z),
-                np.sin(phi) * np.sqrt(z),
-                np.sqrt(1 - z),
-            ]
-        ).reshape(-1, 1)
-
-        # negative Householder matrix from the paper
-        H_neg = 2 * v @ v.T - np.eye(3)
-        R = np.array(
-            [
-                [np.cos(theta), np.sin(theta), 0],
-                [-np.sin(theta), np.cos(theta), 0],
-                [0, 0, 1],
-            ]
-        )
-        matrices.append(H_neg @ R)
-
-    return torch.tensor(np.array(matrices))
+    return torch.stack(matrices)
 
 
 def visualize_rotations(show: bool = False) -> Figure:
@@ -54,6 +76,12 @@ def visualize_rotations(show: bool = False) -> Figure:
 
     References:
         https://matplotlib.org/stable/gallery/mplot3d/scatter3d.html
+
+    Args:
+        show: Whether to show the figure interactively.
+
+    Returns:
+        A matplotlib Figure with of the scatterplot.
     """
     fig = plt.figure()
     ax = fig.add_subplot(projection="3d")
