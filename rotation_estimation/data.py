@@ -54,7 +54,6 @@ class PointCloudCollator:
                 verts=[x["verts"] for x in batch],
                 faces=[x["faces"] for x in batch],
             )
-
             # generate point clouds from vertices and faces
             point_clouds = sample_points_from_meshes(meshes, num_samples=self.points_per_sample)  # type: ignore
 
