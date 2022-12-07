@@ -2,8 +2,13 @@ name: ml-project
 channels:
   - defaults
   - pytorch
+  - fvcore
+  - iopath
 dependencies:
   - python=3.10
+
+  - fvcore
+  - iopath
 
   - flake8
   - mypy
