@@ -4,6 +4,8 @@ from typing import Dict, List, Tuple
 import torch
 from pytorch3d.datasets.shapenet.shapenet_core import ShapeNetCore
 from pytorch3d.ops import sample_points_from_meshes
+from pytorch3d.renderer import (OpenGLPerspectiveCameras, PointLights,
+                                RasterizationSettings)
 from pytorch3d.structures import Meshes
 from torch.utils.data import DataLoader
 
@@ -26,6 +28,10 @@ class ShapeNetRotation(ShapeNetCore):
         super().__init__(data_dir, synsets, version, load_textures, texture_resolution)
         self.save_and_load_rotations = save_and_load_rotations
 
+        # based on https://pytorch3d.org/tutorials/dataloaders_ShapeNetCore_R2N2
+        self.raster_settings = RasterizationSettings(image_size=128)
+        self.point_lights = PointLights(location=torch.tensor([0.0, 1.0, -2.0]))  # default point lights from tutorial
+
     def __getitem__(self, idx: int) -> Dict:
         model = super().__getitem__(idx)
 
@@ -40,6 +46,17 @@ class ShapeNetRotation(ShapeNetCore):
             rotation = random_rotation()
 
         model["rotation"] = rotation
+
+        # based on https://pytorch3d.org/tutorials/dataloaders_ShapeNetCore_R2N2
+        cameras = OpenGLPerspectiveCameras(R=rotation)
+        images = self.render(
+            model_ids=[model["model_id"]],
+            cameras=cameras,
+            raster_settings=self.raster_settings,
+            lights=self.point_lights,
+        )
+        breakpoint()
+
         return model
 
 
@@ -59,19 +76,12 @@ class PointCloudCollator:
             point_clouds = sample_points_from_meshes(meshes, num_samples=self.points_per_sample)  # type: ignore
 
             # rotate point cloud
+            # TODO: convert to einsum if there's time
             output_point_clouds = torch.zeros_like(point_clouds)
             for k, (point_cloud, R) in enumerate(zip(point_clouds, rotation_matrices)):
                 output_point_clouds[k] = (R @ point_cloud.T).T
 
             return output_point_clouds, rotation_matrices
-
-
-class ImageCollator:
-    def __init__(self, points_per_sample: int = DEFAULT_POINTS_PER_SAMPLE) -> None:
-        self.points_per_sample = points_per_sample
-
-    def __call__(self, batch: List[Dict]) -> torch.Tensor:
-        pass
 
 
 def get_point_cloud_data_loader(
