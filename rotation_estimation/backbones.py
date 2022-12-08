@@ -6,7 +6,11 @@ import torch.nn.functional as F
 
 
 class TNet(nn.Module):
-    """Represents entire input/feature transform block."""
+    """
+    Represents entire input/feature transform block.
+
+    Reference: https://arxiv.org/pdf/1612.00593.pdf
+    """
 
     def __init__(
         self,
@@ -43,6 +47,12 @@ class TNet(nn.Module):
 
 
 class PointNet(nn.Module):
+    """
+    PointNet.
+
+    Reference: https://arxiv.org/pdf/1612.00593.pdf
+    """
+
     def __init__(self, output_dimension: int = 512) -> None:
         super().__init__()
         self.network = nn.Sequential(
