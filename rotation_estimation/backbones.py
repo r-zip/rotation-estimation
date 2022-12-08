@@ -1,8 +1,10 @@
-from typing import Tuple
+from typing import Optional, Tuple
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+from .blocks import build_mlp
 
 
 class TNet(nn.Module):
@@ -15,28 +17,14 @@ class TNet(nn.Module):
     def __init__(
         self,
         layer_sizes: Tuple[int, int, int, int, int] = (64, 128, 1024, 512, 256),
+        layer_norm: bool = True,
         input_features: int = 3,
         output_size: Tuple[int, int] = (3, 3),
     ) -> None:
         super().__init__()
         self.output_size = output_size
-        self.mlp1 = nn.Sequential(
-            nn.Linear(input_features, layer_sizes[0]),
-            nn.ReLU(),
-            nn.LayerNorm(layer_sizes[0]),
-            nn.Linear(layer_sizes[0], layer_sizes[1]),
-            nn.ReLU(),
-            nn.LayerNorm(layer_sizes[1]),
-            nn.Linear(layer_sizes[1], layer_sizes[2]),
-            nn.ReLU(),
-            nn.LayerNorm(layer_sizes[2]),
-        )
-        self.mlp2 = nn.Sequential(
-            nn.Linear(layer_sizes[3], layer_sizes[4]),
-            nn.ReLU(),
-            nn.LayerNorm(layer_sizes[4]),
-            nn.Linear(layer_sizes[4], output_size[0] * output_size[1]),
-        )
+        self.mlp1 = build_mlp(input_features, layer_sizes[3], layer_sizes[:3], layer_norm=layer_norm)
+        self.mlp2 = build_mlp(layer_sizes[3], output_size[0] * output_size[1], layer_sizes[4:])
 
     def forward(self, points: torch.Tensor) -> torch.Tensor:
         out1 = self.mlp1(points)
@@ -46,40 +34,13 @@ class TNet(nn.Module):
         return torch.einsum("b p d, b d a -> b p a", points, matrix)
 
 
-class PointNet(nn.Module):
-    """
-    PointNet.
-
-    Reference: https://arxiv.org/pdf/1612.00593.pdf
-    """
-
-    def __init__(self, output_dimension: int = 512) -> None:
-        super().__init__()
-        self.network = nn.Sequential(
-            TNet(),
-            nn.Linear(3, 64),
-            nn.ReLU(),
-            nn.LayerNorm(64),  # maybe remove?
-            nn.Linear(64, 64),
-            nn.ReLU(),
-            nn.LayerNorm(64),  # maybe remove?
-            TNet(input_features=64, output_size=(64, 64)),
-            nn.Linear(64, 128),
-            nn.ReLU(),
-            nn.LayerNorm(128),  # maybe remove?
-            nn.Linear(128, 1024),
-            nn.ReLU(),
-            nn.LayerNorm(1024),  # maybe remove?
-            nn.AdaptiveMaxPool2d(output_size=(1, 1024)),
-            nn.Flatten(),
-            nn.Linear(1024, 512),
-            nn.ReLU(),
-            nn.LayerNorm(512),
-            nn.Linear(512, 256),
-            nn.ReLU(),
-            nn.LayerNorm(256),
-            nn.Linear(256, output_dimension),
-        )
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.network(x)
+def build_point_net(output_dimension: int = 512, final_activation: Optional[nn.Module] = None) -> nn.Module:
+    return nn.Sequential(
+        TNet(),
+        build_mlp(3, 64, [64], layer_norm=True, final_activation=nn.ReLU()),
+        TNet(input_features=64, output_size=(64, 64)),
+        build_mlp(64, 1024, [64, 128], layer_norm=True, final_activation=nn.ReLU()),
+        nn.AdaptiveMaxPool2d(output_size=(1, 1024)),
+        nn.Flatten(),
+        build_mlp(1024, output_dimension, [512, 256], layer_norm=True, final_activation=final_activation),
+    )
