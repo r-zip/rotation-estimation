@@ -11,12 +11,13 @@ class TNet(nn.Module):
     def __init__(
         self,
         layer_sizes: Tuple[int, int, int, int, int] = (64, 128, 1024, 512, 256),
+        input_features: int = 3,
         output_size: Tuple[int, int] = (3, 3),
     ) -> None:
         super().__init__()
         self.output_size = output_size
         self.mlp1 = nn.Sequential(
-            nn.Linear(3, layer_sizes[0]),
+            nn.Linear(input_features, layer_sizes[0]),
             nn.ReLU(),
             nn.LayerNorm(layer_sizes[0]),
             nn.Linear(layer_sizes[0], layer_sizes[1]),
@@ -43,27 +44,32 @@ class TNet(nn.Module):
 
 class PointNet(nn.Module):
     def __init__(self, output_dimension: int = 512) -> None:
-        super().__init__(
+        super().__init__()
+        self.network = nn.Sequential(
             TNet(),
             nn.Linear(3, 64),
             nn.ReLU(),
-            nn.LayerNorm(),  # maybe remove?
+            nn.LayerNorm(64),  # maybe remove?
             nn.Linear(64, 64),
             nn.ReLU(),
-            nn.LayerNorm(),  # maybe remove?
-            TNet(output_size=(64, 64)),
+            nn.LayerNorm(64),  # maybe remove?
+            TNet(input_features=64, output_size=(64, 64)),
             nn.Linear(64, 128),
             nn.ReLU(),
-            nn.LayerNorm(),  # maybe remove?
+            nn.LayerNorm(128),  # maybe remove?
             nn.Linear(128, 1024),
             nn.ReLU(),
-            nn.LayerNorm(),  # maybe remove?
+            nn.LayerNorm(1024),  # maybe remove?
             nn.AdaptiveMaxPool2d(output_size=(1, 1024)),
+            nn.Flatten(),
             nn.Linear(1024, 512),
             nn.ReLU(),
-            nn.LayerNorm(),
+            nn.LayerNorm(512),
             nn.Linear(512, 256),
             nn.ReLU(),
-            nn.LayerNorm(),
+            nn.LayerNorm(256),
             nn.Linear(256, output_dimension),
         )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.network(x)
