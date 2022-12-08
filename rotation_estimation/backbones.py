@@ -35,12 +35,35 @@ class TNet(nn.Module):
 
     def forward(self, points: torch.Tensor) -> torch.Tensor:
         out1 = self.mlp1(points)
-        pooled = F.adaptive_max_pool2d(out1, output_size=(512, 1)).squeeze()
+        # TODO: WHY DOES THIS WORK (dimensionally)?
+        pooled = F.adaptive_max_pool2d(out1, output_size=(1, 512)).squeeze()
         matrix = self.mlp2(pooled).reshape((points.shape[0], *self.output_size))
         return torch.einsum("b p d, b d a -> b p a", points, matrix)
 
 
 class PointNet(nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
-        self.TNet1 = TNet()
+    def __init__(self, output_dimension: int = 512) -> None:
+        super().__init__(
+            TNet(),
+            nn.Linear(3, 64),
+            nn.ReLU(),
+            nn.LayerNorm(),  # maybe remove?
+            nn.Linear(64, 64),
+            nn.ReLU(),
+            nn.LayerNorm(),  # maybe remove?
+            TNet(output_size=(64, 64)),
+            nn.Linear(64, 128),
+            nn.ReLU(),
+            nn.LayerNorm(),  # maybe remove?
+            nn.Linear(128, 1024),
+            nn.ReLU(),
+            nn.LayerNorm(),  # maybe remove?
+            nn.AdaptiveMaxPool2d(output_size=(1, 1024)),
+            nn.Linear(1024, 512),
+            nn.ReLU(),
+            nn.LayerNorm(),
+            nn.Linear(512, 256),
+            nn.ReLU(),
+            nn.LayerNorm(),
+            nn.Linear(256, output_dimension),
+        )
