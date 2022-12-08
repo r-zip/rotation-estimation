@@ -6,6 +6,8 @@ import torch.nn.functional as F
 
 
 class TNet(nn.Module):
+    """Represents entire input/feature transform block."""
+
     def __init__(
         self,
         layer_sizes: Tuple[int, int, int, int, int] = (64, 128, 1024, 512, 256),
@@ -34,7 +36,8 @@ class TNet(nn.Module):
     def forward(self, points: torch.Tensor) -> torch.Tensor:
         out1 = self.mlp1(points)
         pooled = F.adaptive_max_pool2d(out1, output_size=(512, 1)).squeeze()
-        return self.mlp2(pooled).reshape((points.shape[0], *self.output_size))
+        matrix = self.mlp2(pooled).reshape((points.shape[0], *self.output_size))
+        return torch.einsum("b p d, b d a -> b p a", points, matrix)
 
 
 class PointNet(nn.Module):
