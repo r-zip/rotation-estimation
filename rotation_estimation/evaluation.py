@@ -16,6 +16,7 @@ def get_percentiles(loss_history):
     upper = [np.percentile(x, 75) for x in loss_history_transpose]
     return mean, lower, upper
 
+
 def parse_one_list(loss_histories):
     """
     Parses the history of one list
@@ -43,18 +44,17 @@ def plot_train_test(loss_histories, arch_list, plot_list, data_stepsize, split: 
     :param loss_history: A list of lists of dict of dict of lists
     """
     hist_dictionary = [parse_one_list(x) for x in loss_histories]
-    
+
     for plot_i in plot_list:
         iterator = 0
-        color = ['b', 'r', 'm', 'g', 'c', 'y']
+        color = ["b", "r", "m", "g", "c", "y"]
         for hist_dict in hist_dictionary:
             iterator_arch = 0
-            if (plot_i in hist_dict[split]):
+            if plot_i in hist_dict[split]:
                 mean, lower, upper = get_percentiles(hist_dict[split][plot_i])
                 xaxis = [x * data_stepsize for x in range(len(hist_dict[split][plot_i]))]
                 plt.plot(xaxis, mean, color=color[iterator], label=f"{plot_i} ({arch_list[iterator_arch]})")
-                plt.fill_between(xaxis, lower, upper, color=color[iterator], alpha=.1)
-            
+                plt.fill_between(xaxis, lower, upper, color=color[iterator], alpha=0.1)
 
         # plt.savefig(f"figure_{plot_i}",dpi=300)
         plt.legend()
