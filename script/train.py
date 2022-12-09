@@ -1,5 +1,6 @@
 import json
 from enum import Enum
+from typing import Callable
 
 import typer
 from torch.utils.data import DataLoader
