@@ -13,10 +13,10 @@ def get_percentiles(loss_history):
     upper = [np.percentile(x, 75) for x in loss_history_transpose]
     return mean, lower, upper
 
-def plot_train_test(loss_histories, plot_list, data_stepsize):
+def parse_one_list(loss_histories):
     """
-    Plots the loss history
-    :param loss_history: A list of dict of dict of lists
+    Parses the history of one list
+    :param loss_history: A lists of dict of dict of lists
     """
     hist_dict = loss_histories[0]
     for key in hist_dict["train"]:
@@ -31,19 +31,27 @@ def plot_train_test(loss_histories, plot_list, data_stepsize):
             hist_dict["train"][key].append([lh["train"][key]])
         for key in hist_dict["val"]:
             hist_dict["val"][key].append([lh["val"][key]])
+    return hist_dict
 
+
+def plot_train_test(loss_histories, arch_list, plot_list, data_stepsize, split: str = "val"):
+    """
+    Plots the loss history
+    :param loss_history: A list of lists of dict of dict of lists
+    """
+    hist_dictionary = [parse_one_list(x) for x in loss_histories]
+    
     for plot_i in plot_list:
-        if (plot_i in hist_dict["train"]):
-            mean, lower, upper = get_percentiles(hist_dict["train"][plot_i])
-            xaxis = [x * data_stepsize for x in range(len(hist_dict["val"][plot_i]))]
-            plt.plot(xaxis, mean, color='b', label=f"{plot_i} (train)")
-            plt.fill_between(xaxis, lower, upper, color='b', alpha=.1)
-
-        if (plot_i in hist_dict["val"]):
-            mean, lower, upper = get_percentiles(hist_dict["val"][plot_i])
-            xaxis = [x * data_stepsize for x in range(len(hist_dict["val"][plot_i]))]
-            plt.plot(xaxis, mean, color='r', label=f"{plot_i} (validation)")
-            plt.fill_between(xaxis, lower, upper, color='r', alpha=.1)
+        iterator = 0
+        color = ['b', 'r', 'm', 'g', 'c', 'y']
+        for hist_dict in hist_dictionary:
+            iterator_arch = 0
+            if (plot_i in hist_dict[split]):
+                mean, lower, upper = get_percentiles(hist_dict[split][plot_i])
+                xaxis = [x * data_stepsize for x in range(len(hist_dict[split][plot_i]))]
+                plt.plot(xaxis, mean, color=color[iterator], label=f"{plot_i} ({arch_list[iterator_arch]})")
+                plt.fill_between(xaxis, lower, upper, color=color[iterator], alpha=.1)
+            
 
         # plt.savefig(f"figure_{plot_i}",dpi=300)
         plt.legend()
@@ -51,7 +59,7 @@ def plot_train_test(loss_histories, plot_list, data_stepsize):
         # plt.close()
 
 
-testdict1 = {"train":{"mse":[0,1,2],"test":[2,3,2]},"val":{"mse":[1,2,2],"tes":[1,1,5],"test":[7,2,3]}}
-testdict2 = {"train":{"mse":[15,2,2],"test":[3,3,5]},"val":{"mse":[7,1,4],"tes":[5,6,2],"test":[4,4,3]}}
-test = [testdict1,testdict2, testdict2]
-plot_train_test(test,["mse","test"],10)
+# testdict1 = {"train":{"mse":[0,1,2],"test":[2,3,2]},"val":{"mse":[1,2,2],"tes":[1,1,5],"test":[7,2,3]}}
+# testdict2 = {"train":{"mse":[15,2,2],"test":[3,3,5]},"val":{"mse":[7,1,4],"tes":[5,6,2],"test":[4,4,3]}}
+# test = [testdict1,testdict2, testdict2]
+# plot_train_test(test,["mse","test"],10)
