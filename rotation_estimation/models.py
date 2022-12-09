@@ -8,7 +8,7 @@ from .blocks import build_mlp
 from .heads import svd_projection
 
 
-class PointNetSVD(nn.Module):
+class PointNetRotationRegression(nn.Module):
     def __init__(
         self,
         point_net_embedding_dim: int = 32,
@@ -16,7 +16,7 @@ class PointNetSVD(nn.Module):
         layer_norm: bool = False,
         point_net: str = "simplified",
         svd_projection: bool = False,
-        six_d: bool = False
+        six_d: bool = False,
     ) -> None:
         super().__init__()
         self.svd_projection = svd_projection

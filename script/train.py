@@ -2,14 +2,14 @@ import json
 from enum import Enum
 
 import typer
-from torch.utils.data import DataLoader
 from torch.nn import MSELoss
+from torch.utils.data import DataLoader
 
 from rotation_estimation.data import RotationData
-from rotation_estimation.models import PointNetSVD
-from rotation_estimation.train import train
-from rotation_estimation.sixd import OrthogonalMSELoss
 from rotation_estimation.evaluation import plot_train_test
+from rotation_estimation.models import PointNetRotationRegression
+from rotation_estimation.sixd import OrthogonalMSELoss
+from rotation_estimation.train import train
 
 
 class Model(str, Enum):
@@ -24,9 +24,9 @@ def main(
     iteration: int = 1,
     batch_size: int = 10,
     svd_projection: bool = False,
-    regularization: float = 0.001
+    regularization: float = 0.001,
 ):
-    model = PointNetSVD(layer_norm=layer_norm, svd_projection=svd_projection, six_d=six_d)
+    model = PointNetRotationRegression(layer_norm=layer_norm, svd_projection=svd_projection, six_d=six_d)
 
     # TODO: train, val, test split
     # train_data_loader = get_point_cloud_data_loader(DATASET_PATH)
@@ -44,12 +44,12 @@ def main(
     train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(dataset=val_set, batch_size=batch_size, shuffle=True)
 
-    history = train(model, train_loader, val_loader, loss_fn = loss_fn, lr=lr, epochs=epochs)
+    history = train(model, train_loader, val_loader, loss_fn=loss_fn, lr=lr, epochs=epochs)
 
     if six_d:
         with open(f"six_d_{regularization}_history{iteration}.json", "w") as f:
             json.dump(history, f)
-    else: 
+    else:
         with open(f"nine_d_history{iteration}.json", "w") as f:
             json.dump(history, f)
 
@@ -69,17 +69,15 @@ def gen_graph(r, rep):
                 contents = json.load(f)
                 temp.append(contents)
         x.append(temp)
-    plot_train_test(x, ["9D Baseline"]+[f"6D r={x}" for x in r], ["mse","so3","euler"], 100)
+    plot_train_test(x, ["9D Baseline"] + [f"6D r={x}" for x in r], ["mse", "so3", "euler"], 100)
 
 
 if __name__ == "__main__":
-    r = [1000,500,0,0.05,0.001]
-    rep = [x for x in range(x)]
+    r = [1000, 500, 0, 0.05, 0.001]
+    rep = [x for x in range(3)]
     for i in rep:
         for j in r:
             main(six_d=True, iteration=i, regularization=j)
     gen_graph(r, rep)
-    
-    
-    
+
     # typer.run(main)
