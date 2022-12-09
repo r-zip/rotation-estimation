@@ -19,14 +19,15 @@ class Model(str, Enum):
 
 def train_once(
     six_d: bool = False,
-    lr: float = 1e-4,
-    epochs: int = 5,
+    lr: float = 1e-5,
+    epochs: int = 10,
     layer_norm: bool = True,
     iteration: int = 1,
-    batch_size: int = 100,
+    batch_size: int = 64,
     svd_projection: bool = False,
     regularization: float = 0.1,
     debug: bool = False,
+    num_points: int = 100,
 ):
     if debug:
         torch.autograd.set_detect_anomaly(True)
@@ -36,8 +37,8 @@ def train_once(
     # TODO: train, val, test split
     # train_data_loader = get_point_cloud_data_loader(DATASET_PATH)
     # val_data_loader = get_point_cloud_data_loader(DATASET_PATH)
-    train_set = RotationData(dataset_size=2000)
-    val_set = RotationData(dataset_size=200)
+    train_set = RotationData(dataset_size=10_000, num_points=num_points)
+    val_set = RotationData(dataset_size=2_000, num_points=num_points)
 
     # if six_d:
     #     loss_fn = OrthogonalMSELoss(regularization)
@@ -85,23 +86,43 @@ def main(
     batch_size: int = 10,
     svd_projection: bool = False,
     debug: bool = False,
+    num_points: int = 100,
 ):
-    r = [1000, 500, 0, 0.05, 0.001]
-    rep = [x for x in range(3)]
-    for i in rep:
-        for j in r:
-            train_once(
-                lr=lr,
-                epochs=epochs,
-                layer_norm=layer_norm,
-                batch_size=batch_size,
-                svd_projection=svd_projection,
-                debug=debug,
-                six_d=True,
-                iteration=i,
-                regularization=j,
-            )
-    gen_graph(r, rep)
+    # r = [1000, 500, 0, 0.05, 0.001]
+    # rep = [x for x in range(3)]
+    # for i in rep:
+    #     for j in r:
+    #         train_once(
+    #             lr=lr,
+    #             epochs=epochs,
+    #             layer_norm=layer_norm,
+    #             batch_size=batch_size,
+    #             svd_projection=svd_projection,
+    #             debug=debug,
+    #             six_d=True,
+    #             num_points=num_points,
+    #             iteration=i,
+    #             regularization=j,
+    #         )
+    # gen_graph(r, rep)
+
+    train_once(
+        lr=lr,
+        epochs=epochs,
+        layer_norm=layer_norm,
+        batch_size=batch_size,
+        svd_projection=svd_projection,
+        debug=debug,
+        six_d=True,
+        num_points=num_points,
+        iteration=1,
+        regularization=0.1,
+    )
+
+    with open("history1.json", "r") as f:
+        history = json.load(f)
+
+    breakpoint()
 
 
 if __name__ == "__main__":

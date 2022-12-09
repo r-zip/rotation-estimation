@@ -94,6 +94,23 @@ class RotationData(Dataset):
         return self.num_points
 
     def __getitem__(self, idx):
+        import matplotlib.pyplot as plt
+        import numpy as np
+
+        # reference: https://matplotlib.org/stable/gallery/mplot3d/scatter3d.html
+        fig = plt.figure()
+        ax = fig.add_subplot(projection="3d")
+        ax.scatter(self.point_cloud[:, 0], self.point_cloud[:, 1], self.point_cloud[:, 2], alpha=0.3)
+        plt.savefig("scatter.png", dpi=300)
+        plt.close()
+        fig = plt.figure()
+        ax = fig.add_subplot(projection="3d")
+        rotated = torch.matmul(self.point_cloud, self.rotation_matrices[idx])
+        ax.scatter(rotated[:, 0], rotated[:, 1], rotated[:, 2], alpha=0.3)
+        plt.savefig("scatter_rotated.png", dpi=300)
+        plt.close()
+        exit()
+
         return torch.matmul(self.point_cloud, self.rotation_matrices[idx]), self.rotation_matrices[idx]
 
 

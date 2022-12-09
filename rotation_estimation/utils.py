@@ -83,6 +83,7 @@ def visualize_rotations(show: bool = False) -> Figure:
     Returns:
         A matplotlib Figure with of the scatterplot.
     """
+    # reference: https://matplotlib.org/stable/gallery/mplot3d/scatter3d.html
     fig = plt.figure()
     ax = fig.add_subplot(projection="3d")
     R = random_rotations(500).numpy()

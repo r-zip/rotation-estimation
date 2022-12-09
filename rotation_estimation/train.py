@@ -85,7 +85,7 @@ def train(
                     n_val = 0
                     for val_input, val_label in val_data_loader:
                         val_output = model(val_input)
-                        avg_val_loss += F.mse_loss(val_output, val_label).item()
+                        avg_val_loss += loss_fn(val_output, val_label).item()
                         n_val += 1
                         val_metrics.append(compute_metrics(val_output, val_label))
 
@@ -96,6 +96,7 @@ def train(
                 print(f"[step: {sum_steps + 1:5d}] val loss: {avg_val_loss:.3f}")
 
                 # validation here
+                # TODO: rename mse to loss or something
                 history["train"]["mse"].append(avg_train_loss)
                 history["val"]["mse"].append(avg_val_loss)
 
