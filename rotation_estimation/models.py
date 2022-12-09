@@ -70,7 +70,7 @@ class PointNetRotationRegression(nn.Module):
         proj = (y[:, 0, :] * x[:, 1, :]).sum(dim=-1)
         y[:, 1, :] = self._normalize(x[:, 1, :] - proj[:, None] * y[:, 0, :])
         y[:, 2, :] = torch.linalg.cross(y[:, 0, :], y[:, 1, :])
-        return y / torch.linalg.norm(dim=1)
+        return y
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         point_net_embedding = self.point_net(x)
