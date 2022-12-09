@@ -3,12 +3,13 @@ from typing import Dict, List, Tuple
 
 import torch
 from pytorch3d.datasets.shapenet.shapenet_core import ShapeNetCore
+from pytorch3d.io import IO
 from pytorch3d.ops import sample_points_from_meshes
 from pytorch3d.structures import Meshes
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 
 from .constants import DEFAULT_BATCH_SIZE, DEFAULT_POINTS_PER_SAMPLE
-from .utils import random_rotation, synset_and_model_to_path
+from .utils import random_rotation, random_rotations, synset_and_model_to_path
 
 
 class ShapeNetRotation(ShapeNetCore):
@@ -73,6 +74,29 @@ class ImageCollator:
         pass
 
 
+class RotationData(Dataset):
+    def __init__(
+        self,
+        mesh_file_path: str = Path(__file__).parents[1]
+        / "data/ShapeNetAirplanes/02691156/1a04e3eab45ca15dd86060f189eb133/models/model_normalized.obj",
+        num_points: int = 100,
+        device: str = "cpu",
+        dataset_size: int = 2400,
+    ) -> None:
+        mesh = IO().load_mesh(mesh_file_path, device=device)
+        self.point_cloud = sample_points_from_meshes(
+            mesh, num_samples=num_points, return_normals=False, return_textures=False
+        ).squeeze()
+        self.num_points = dataset_size
+        self.rotation_matrices = random_rotations(self.num_points)
+
+    def __len__(self):
+        return self.num_points
+
+    def __getitem__(self, idx):
+        return torch.matmul(self.point_cloud, self.rotation_matrices[idx]), self.rotation_matrices[idx]
+
+
 def get_point_cloud_data_loader(
     path: Path,
     batch_size: int = DEFAULT_BATCH_SIZE,
@@ -95,7 +119,8 @@ def get_point_cloud_data_loader(
         that produces point cloud/rotation matrix pairs.
     """
     return DataLoader(
-        ShapeNetRotation(path, version=2, save_and_load_rotations=save_and_load_rotations),
+        # ShapeNetRotation(path, version=2, save_and_load_rotations=save_and_load_rotations),
+        RotationData(num_points=256),
         batch_size=batch_size,
-        collate_fn=PointCloudCollator(points_per_sample),
+        # collate_fn=PointCloudCollator(points_per_sample),
     )
