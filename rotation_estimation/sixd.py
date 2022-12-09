@@ -10,6 +10,6 @@ class OrthogonalMSELoss(_Loss):
 
     def forward(self, x, y) -> torch.Tensor:
         return torch.mean(
-            torch.sum((x - y[:, :2, :]) ** 2, dim=(1, 2))
-            + self.weight * torch.flatten(torch.matmul(x[:, 0, :][:, None, :], x[:, 1, :][:, :, None]))
+            torch.sum((x[:, :2, :] - y[:, :2, :]) ** 2, dim=(1, 2))
+            + self.weight * torch.mean((x[:, 0, :] * x[:, 1, :]).sum(dim=1))
         )
