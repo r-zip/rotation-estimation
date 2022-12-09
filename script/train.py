@@ -3,10 +3,13 @@ from enum import Enum
 
 import typer
 from torch.utils.data import DataLoader
+from torch.nn import MSELoss
 
 from rotation_estimation.data import RotationData
 from rotation_estimation.models import PointNetSVD
 from rotation_estimation.train import train
+from rotation_estimation.sixd import OrthogonalMSELoss
+from rotation_estimation.evaluation import plot_train_test
 
 
 class Model(str, Enum):
@@ -14,33 +17,69 @@ class Model(str, Enum):
 
 
 def main(
-    model: Model = Model.POINT_NET_SVD,
+    six_d: bool = False,
     lr: float = 1e-4,
     epochs: int = 5,
     layer_norm: bool = True,
     iteration: int = 1,
     batch_size: int = 10,
     svd_projection: bool = False,
+    regularization: float = 0.001
 ):
-    model = PointNetSVD(layer_norm=layer_norm, svd_projection=svd_projection)
+    model = PointNetSVD(layer_norm=layer_norm, svd_projection=svd_projection, six_d=six_d)
 
     # TODO: train, val, test split
     # train_data_loader = get_point_cloud_data_loader(DATASET_PATH)
     # val_data_loader = get_point_cloud_data_loader(DATASET_PATH)
     train_set = RotationData(dataset_size=2000)
-    test_set = RotationData(dataset_size=200)
     val_set = RotationData(dataset_size=200)
+
+    if six_d:
+        loss_fn = OrthogonalMSELoss(regularization)
+    else:
+        loss_fn = MSELoss()
+
     # train_set, val_set, test_set = random_split(dataset, [2000, 200, 200])
     # breakpoint()
     train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(dataset=val_set, batch_size=batch_size, shuffle=True)
-    test_loader = DataLoader(dataset=test_set, batch_size=batch_size, shuffle=True)
 
-    history = train(model, train_loader, val_loader, lr=lr, epochs=epochs)
+    history = train(model, train_loader, val_loader, loss_fn = loss_fn, lr=lr, epochs=epochs)
 
-    with open(f"history{iteration}.json", "w") as f:
-        json.dump(history, f)
+    if six_d:
+        with open(f"six_d_{regularization}_history{iteration}.json", "w") as f:
+            json.dump(history, f)
+    else: 
+        with open(f"nine_d_history{iteration}.json", "w") as f:
+            json.dump(history, f)
+
+
+def gen_graph(r, rep):
+    x = []
+    temp = []
+    for u in rep:
+        with open(f"nine_d_history{u}.json", "r") as f:
+            contents = json.load(f)
+            temp.append(contents)
+    x.append(temp)
+    for i in r:
+        temp = []
+        for j in rep:
+            with open(f"six_d_{i}_history{j}.json", "r") as f:
+                contents = json.load(f)
+                temp.append(contents)
+        x.append(temp)
+    plot_train_test(x, ["9D Baseline"]+[f"6D r={x}" for x in r], ["mse","so3","euler"], 100)
 
 
 if __name__ == "__main__":
-    typer.run(main)
+    r = [1000,500,0,0.05,0.001]
+    rep = [x for x in range(x)]
+    for i in rep:
+        for j in r:
+            main(six_d=True, iteration=i, regularization=j)
+    gen_graph(r, rep)
+    
+    
+    
+    # typer.run(main)
