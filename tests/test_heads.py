@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from rotation_estimation.heads import svd_projection
+from rotation_estimation.heads import gram_schmidt, svd_projection
 from rotation_estimation.utils import random_rotation
 
 
@@ -15,3 +15,11 @@ def test_svd_projection():
         assert np.abs(torch.linalg.det(R_hat[k]).item() - 1) < 1e-4
         assert torch.allclose(R_hat[k].T @ R_hat[k], torch.eye(3), rtol=1e-6, atol=1e-6)
         assert torch.linalg.norm(R_hat[k] - R[k], ord="fro") < 0.001
+
+
+def test_gram_schmidt():
+    R = torch.randn(10, 2, 3)
+    G = gram_schmidt(R)
+    for k in range(G.shape[0]):
+        assert torch.allclose(G[k].T @ G[k], torch.eye(3), rtol=1e-6, atol=1e-6)
+        assert np.abs(torch.linalg.det(G[k]).item() - 1) < 1e-4

@@ -28,6 +28,23 @@ def svd_projection(R: torch.Tensor, eps: float = 0.001) -> torch.Tensor:
     return torch.matmul(U, Vh)
 
 
+def _normalize(x: torch.Tensor) -> torch.Tensor:
+    return x / torch.linalg.norm(x, dim=-1)[:, None]
+
+
+def gram_schmidt(x: torch.Tensor) -> torch.Tensor:
+    """Normalize each row of the rotation matrix"""
+    # references:
+    # https://en.wikipedia.org/wiki/Gram–Schmidt_process#The_Gram–Schmidt_process
+    # https://arxiv.org/pdf/1812.07035.pdf
+    y = torch.zeros((x.shape[0], 3, 3))
+    y[:, 0, :] = _normalize(x[:, 0, :])
+    proj = (y[:, 0, :].clone() * x[:, 1, :]).sum(dim=-1)
+    y[:, 1, :] = _normalize(x[:, 1, :] - proj[:, None] * y[:, 0, :].clone())
+    y[:, 2, :] = torch.linalg.cross(y[:, 0, :].clone(), y[:, 1, :].clone())
+    return y
+
+
 class SVDHead(nn.Module):
     def __init__(self, input_dimension: int, layer_sizes: List[int], layer_norm: bool = False) -> None:
         super().__init__()

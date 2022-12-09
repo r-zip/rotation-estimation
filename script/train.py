@@ -1,6 +1,5 @@
 import json
 from enum import Enum
-from typing import Callable
 
 import torch.autograd
 import typer
@@ -18,15 +17,15 @@ class Model(str, Enum):
     POINT_NET_SVD = "PointNetSVD"
 
 
-def main(
+def train_once(
     six_d: bool = False,
     lr: float = 1e-4,
     epochs: int = 5,
     layer_norm: bool = True,
     iteration: int = 1,
-    batch_size: int = 10,
+    batch_size: int = 100,
     svd_projection: bool = False,
-    regularization: float = 0.001,
+    regularization: float = 0.1,
     debug: bool = False,
 ):
     if debug:
@@ -40,10 +39,11 @@ def main(
     train_set = RotationData(dataset_size=2000)
     val_set = RotationData(dataset_size=200)
 
-    if six_d:
-        loss_fn = OrthogonalMSELoss(regularization)
-    else:
-        loss_fn = MSELoss()
+    # if six_d:
+    #     loss_fn = OrthogonalMSELoss(regularization)
+    # else:
+    #     loss_fn = MSELoss()
+    loss_fn = MSELoss()
 
     # train_set, val_set, test_set = random_split(dataset, [2000, 200, 200])
     # breakpoint()
@@ -78,12 +78,31 @@ def gen_graph(r, rep):
     plot_train_test(x, ["9D Baseline"] + [f"6D r={x}" for x in r], ["mse", "so3", "euler"], 100)
 
 
-if __name__ == "__main__":
+def main(
+    lr: float = 1e-4,
+    epochs: int = 5,
+    layer_norm: bool = True,
+    batch_size: int = 10,
+    svd_projection: bool = False,
+    debug: bool = False,
+):
     r = [1000, 500, 0, 0.05, 0.001]
     rep = [x for x in range(3)]
     for i in rep:
         for j in r:
-            main(six_d=True, iteration=i, regularization=j, debug=True)
+            train_once(
+                lr=lr,
+                epochs=epochs,
+                layer_norm=layer_norm,
+                batch_size=batch_size,
+                svd_projection=svd_projection,
+                debug=debug,
+                six_d=True,
+                iteration=i,
+                regularization=j,
+            )
     gen_graph(r, rep)
 
-    # typer.run(main)
+
+if __name__ == "__main__":
+    typer.run(main)

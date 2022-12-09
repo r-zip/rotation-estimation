@@ -1,10 +1,10 @@
 import torch
 
-from rotation_estimation.models import PointNetSVD
+from rotation_estimation.models import PointNetRotationRegression
 
 
 def test_point_net_svd():
-    point_net_svd = PointNetSVD(512, [128, 64])
+    point_net_svd = PointNetRotationRegression(512, [128, 64])
 
     # batched
     x = torch.randn(10, 500, 3)
