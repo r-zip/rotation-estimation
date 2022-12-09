@@ -34,13 +34,27 @@ class TNet(nn.Module):
         return torch.einsum("b p d, b d a -> b p a", points, matrix)
 
 
-def build_point_net(output_dimension: int = 512, final_activation: Optional[nn.Module] = None) -> nn.Module:
+# def build_point_net(output_dimension: int = 512, final_activation: Optional[nn.Module] = None) -> nn.Module:
+#     return nn.Sequential(
+#         TNet(),
+#         build_mlp(3, 64, [64], layer_norm=True, final_activation=nn.ReLU()),
+#         TNet(input_features=64, output_size=(64, 64)),
+#         build_mlp(64, 1024, [64, 128], layer_norm=True, final_activation=nn.ReLU()),
+#         nn.AdaptiveMaxPool2d(output_size=(1, 1024)),
+#         nn.Flatten(),
+#         build_mlp(1024, output_dimension, [512, 256], layer_norm=True, final_activation=final_activation),
+#     )
+
+
+def build_point_net(
+    output_dimension: int = 512, final_activation: Optional[nn.Module] = None, layer_norm: bool = True
+) -> nn.Module:
     return nn.Sequential(
-        TNet(),
-        build_mlp(3, 64, [64], layer_norm=True, final_activation=nn.ReLU()),
-        TNet(input_features=64, output_size=(64, 64)),
-        build_mlp(64, 1024, [64, 128], layer_norm=True, final_activation=nn.ReLU()),
-        nn.AdaptiveMaxPool2d(output_size=(1, 1024)),
+        TNet(layer_norm=layer_norm),
+        build_mlp(3, 64, [64], layer_norm=layer_norm, final_activation=nn.ReLU()),
+        TNet(input_features=64, output_size=(64, 64), layer_norm=layer_norm),
+        build_mlp(64, 256, [64, 128], layer_norm=layer_norm, final_activation=nn.ReLU()),
+        nn.AdaptiveMaxPool2d(output_size=(1, 256)),
         nn.Flatten(),
-        build_mlp(1024, output_dimension, [512, 256], layer_norm=True, final_activation=final_activation),
+        build_mlp(256, output_dimension, [512, 256], layer_norm=layer_norm, final_activation=final_activation),
     )
