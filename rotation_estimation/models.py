@@ -57,13 +57,32 @@ class PointNetRotationRegression(nn.Module):
                 layer_norm=layer_norm,
             )
 
+    def _normalize(self, x: torch.Tensor) -> torch.Tensor:
+        return x / torch.linalg.norm(x, dim=-1)[:, None]
+
+    def _gram_schmidt(self, x: torch.Tensor) -> torch.Tensor:
+        """Normalize each row of the rotation matrix"""
+        # references:
+        # https://en.wikipedia.org/wiki/Gram–Schmidt_process#The_Gram–Schmidt_process
+        # https://arxiv.org/pdf/1812.07035.pdf
+        y = torch.zeros((x.shape[0], 3, 3))
+        y[:, 0, :] = self._normalize(x[:, 0, :])
+        proj = (y[:, 0, :] * x[:, 1, :]).sum(dim=-1)
+        y[:, 1, :] = self._normalize(x[:, 1, :] - proj[:, None] * y[:, 0, :])
+        y[:, 2, :] = torch.linalg.cross(y[:, 0, :], y[:, 1, :])
+        return y / torch.linalg.norm(dim=1)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         point_net_embedding = self.point_net(x)
         if self.six_d:
             raw_matrix = self.head_mlp(point_net_embedding).reshape((point_net_embedding.shape[0], 2, 3))
         else:
             raw_matrix = self.head_mlp(point_net_embedding).reshape((point_net_embedding.shape[0], 3, 3))
-        if (not self.six_d) and (self.svd_projection):
+
+        if (not self.six_d) and self.svd_projection:
             return svd_projection(raw_matrix)
+        elif self.six_d and (not self.svd_projection):
+            matrix = self._gram_schmidt(raw_matrix)
+            return matrix
 
         return raw_matrix

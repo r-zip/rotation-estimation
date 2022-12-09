@@ -1,4 +1,4 @@
-name: ml-project
+name: ml_project
 channels:
   - defaults
   - pytorch
@@ -22,3 +22,5 @@ dependencies:
   - pandas
   - pytest
   - seaborn
+  - rich
+  - typer
