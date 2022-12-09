@@ -2,6 +2,7 @@ import json
 from enum import Enum
 from typing import Callable
 
+import torch.autograd
 import typer
 from torch.nn import MSELoss
 from torch.utils.data import DataLoader
@@ -26,7 +27,11 @@ def main(
     batch_size: int = 10,
     svd_projection: bool = False,
     regularization: float = 0.001,
+    debug: bool = False,
 ):
+    if debug:
+        torch.autograd.set_detect_anomaly(True)
+
     model = PointNetRotationRegression(layer_norm=layer_norm, svd_projection=svd_projection, six_d=six_d)
 
     # TODO: train, val, test split
@@ -78,7 +83,7 @@ if __name__ == "__main__":
     rep = [x for x in range(3)]
     for i in rep:
         for j in r:
-            main(six_d=True, iteration=i, regularization=j)
+            main(six_d=True, iteration=i, regularization=j, debug=True)
     gen_graph(r, rep)
 
     # typer.run(main)

@@ -67,9 +67,9 @@ class PointNetRotationRegression(nn.Module):
         # https://arxiv.org/pdf/1812.07035.pdf
         y = torch.zeros((x.shape[0], 3, 3))
         y[:, 0, :] = self._normalize(x[:, 0, :])
-        proj = (y[:, 0, :] * x[:, 1, :]).sum(dim=-1)
-        y[:, 1, :] = self._normalize(x[:, 1, :] - proj[:, None] * y[:, 0, :])
-        y[:, 2, :] = torch.linalg.cross(y[:, 0, :], y[:, 1, :])
+        proj = (y[:, 0, :].clone() * x[:, 1, :]).sum(dim=-1)
+        y[:, 1, :] = self._normalize(x[:, 1, :] - proj[:, None] * y[:, 0, :].clone())
+        y[:, 2, :] = torch.linalg.cross(y[:, 0, :].clone(), y[:, 1, :].clone())
         return y
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
