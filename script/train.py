@@ -98,7 +98,7 @@ def main(
     runs: int = 10,
     debug: bool = False,
 ):
-    r = np.logspace(-3, 3, 7)[::-1]
+    r = [0.0, *np.logspace(-3, 3, 7)]
     for i in range(runs):
         for j in r:
             train_once(

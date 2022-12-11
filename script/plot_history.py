@@ -1,43 +1,118 @@
 import json
 from pathlib import Path
+from typing import Dict, List
 
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import typer
 
+DIMS = ["six", "nine"]
+REGS = [0.0, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]
+KEYS = ["mse", "so3"]
 
-def main(history_file: Path, suffix: str, setting_name: str, plots_dir: Path = Path("./plots")):
+
+def combine_histories(history_dir: Path) -> List[Dict[str, np.ndarray]]:
+    summaries = list()
+    for dim in DIMS:
+        for reg in REGS:
+            history_all_runs = dict(
+                train=dict(mse=[], so3=[], euler=[], epoch=[], step=[], sum_steps=[]),
+                val=dict(mse=[], so3=[], euler=[], epoch=[], step=[], sum_steps=[]),
+            )
+            for history_file in sorted(
+                [f for f in history_dir.glob("*.json") if f.stem.startswith(f"{dim}_d_{reg}_history")]
+            ):
+                with open(history_file) as f:
+                    history = json.load(f)
+
+                for split in history.keys():
+                    for key in history[split]:
+                        history_all_runs[split][key].append(history[split][key])
+
+            # average and compute error bars
+            for split in history_all_runs.keys():
+                for key in history_all_runs[split]:
+                    history_all_runs[split][key] = [h for h in history_all_runs[split][key] if h]
+                    if history_all_runs[split][key]:
+                        mean = np.nanmean(history_all_runs[split][key], axis=0)
+                        median = np.nanmedian(history_all_runs[split][key], axis=0)
+                        quartiles = np.quantile(history_all_runs[split][key], [0.25, 0.75], axis=0)
+                        summaries.append(
+                            dict(dim=dim, reg=reg, split=split, key=key, mean=mean, median=median, quartiles=quartiles)
+                        )
+
+    return summaries
+
+
+def main(history_dir: Path, plots_dir: Path = Path("./plots")):
     if not plots_dir.exists():
         plots_dir.mkdir()
 
-    with open(history_file, "r") as f:
-        history = json.load(f)
+    summaries = combine_histories(history_dir)
+    records = []
+    for key in KEYS:
+        for reg in REGS:
+            nine_d_train = [
+                s
+                for s in summaries
+                if s["reg"] == reg and s["dim"] == "nine" and s["split"] == "train" and s["key"] == key
+            ][0]
+            nine_d_val = [
+                s
+                for s in summaries
+                if s["reg"] == reg and s["dim"] == "nine" and s["split"] == "val" and s["key"] == key
+            ][0]
+            six_d_train = [
+                s
+                for s in summaries
+                if s["reg"] == reg and s["dim"] == "six" and s["split"] == "train" and s["key"] == key
+            ][0]
+            six_d_val = [
+                s
+                for s in summaries
+                if s["reg"] == reg and s["dim"] == "six" and s["split"] == "val" and s["key"] == key
+            ][0]
+            steps = np.arange(len(nine_d_train["mean"]))
+            plt.plot(steps, nine_d_train["mean"])
+            plt.fill_between(steps, nine_d_train["quartiles"][0], nine_d_train["quartiles"][1], alpha=0.3)
+            plt.plot(steps, nine_d_val["mean"])
+            plt.fill_between(steps, nine_d_val["quartiles"][0], nine_d_val["quartiles"][1], alpha=0.3)
+            plt.title(f"9D with $\\lambda={reg:0.3f}$")
+            plt.ylabel(key)
+            plt.xlabel("SGD step count")
+            plt.legend(["train", "train quartiles", "val", "val quartiles"])
+            plt.savefig(plots_dir / f"nine_d_{key}_{reg}.png", dpi=300)
+            plt.close()
 
-    plt.plot(history["train"]["mse"])
-    plt.plot(history["val"]["mse"])
-    plt.xlabel("Step")
-    plt.ylabel("Loss")
-    plt.title(f"Learning Curve for {setting_name}")
-    plt.legend(["train", "val"])
-    plt.savefig(plots_dir / f"loss_{suffix}.png", dpi=300)
-    plt.close()
+            plt.plot(steps, six_d_train["mean"])
+            plt.fill_between(steps, six_d_train["quartiles"][0], six_d_train["quartiles"][1], alpha=0.3)
+            plt.plot(steps, six_d_val["mean"])
+            plt.fill_between(steps, six_d_val["quartiles"][0], six_d_val["quartiles"][1], alpha=0.3)
+            plt.title(f"6D with $\\lambda={reg:0.3f}$")
+            plt.ylabel(key)
+            plt.xlabel("SGD step count")
+            plt.legend(["train", "train quartiles", "val", "val quartiles"])
+            plt.savefig(plots_dir / f"six_d_{key}_{reg}.png", dpi=300)
+            plt.close()
 
-    plt.plot(history["train"]["so3"])
-    plt.plot(history["val"]["so3"])
-    plt.xlabel("Step")
-    plt.ylabel("$\\theta$")
-    plt.title(f"SO(3) Distance for {setting_name}")
-    plt.legend(["train", "val"])
-    plt.savefig(plots_dir / f"so3_{suffix}.png", dpi=300)
-    plt.close()
+            # aggregate results in table
+            nine_d_train_final_mean = nine_d_train["mean"][-1]
+            nine_d_val_final_mean = nine_d_val["mean"][-1]
+            six_d_train_final_mean = six_d_train["mean"][-1]
+            six_d_val_final_mean = six_d_val["mean"][-1]
+            records.append(
+                dict(
+                    key=key,
+                    regularization=reg,
+                    nine_d_train=nine_d_train_final_mean,
+                    nine_d_val=nine_d_val_final_mean,
+                    six_d_train=six_d_train_final_mean,
+                    six_d_val=six_d_val_final_mean,
+                )
+            )
 
-    plt.plot(history["train"]["euler"])
-    plt.plot(history["val"]["euler"])
-    plt.xlabel("Step")
-    plt.ylabel("$\\ell_1$ distance b/t $(\\theta_1, \\theta_2, \\theta_3)$ and $(\\theta_1', \\theta_2', \\theta_3')$")
-    plt.title(f"$\\ell_1$ distance for {setting_name}")
-    plt.legend(["train", "val"])
-    plt.savefig(plots_dir / f"euler_{suffix}.png", dpi=300)
-    plt.close()
+    print(pd.DataFrame(records))
 
 
 if __name__ == "__main__":
