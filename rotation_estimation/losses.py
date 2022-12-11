@@ -10,16 +10,12 @@ class OrthogonalMSELoss(_Loss):
 
     def forward(self, output: torch.Tensor, pred_matrix: torch.Tensor, true_matrix: torch.Tensor) -> torch.Tensor:
         if self.six_d:
-            return torch.mean(
-                torch.sum((output - true_matrix[:, :2, :]) ** 2, dim=(1, 2))
-                + self.weight * torch.mean(torch.abs(output[:, 0, :] * output[:, 1, :]).sum(dim=1))
-            )
-        return torch.mean(
-            torch.sum((pred_matrix - true_matrix) ** 2)
-            + self.weight
-            * (
-                torch.mean(torch.abs(output[:, 0, :] * output[:, 1, :]).sum(dim=1))
-                + torch.mean(torch.abs(output[:, 0, :] * output[:, 2, :]).sum(dim=1))
-                + torch.mean(torch.abs(output[:, 1, :] * output[:, 2, :]).sum(dim=1))
-            )
-        )
+            regularizer = torch.abs(output[:, 0, :] * output[:, 1, :]).sum(dim=1)
+            return torch.mean(torch.mean((output - true_matrix[:, :2, :]) ** 2, dim=(1, 2)) + self.weight * regularizer)
+
+        regularizer = (
+            torch.abs(output[:, 0, :] * output[:, 1, :]).sum(dim=1)
+            + torch.abs(output[:, 0, :] * output[:, 2, :]).sum(dim=1)
+            + torch.abs(output[:, 1, :] * output[:, 2, :]).sum(dim=1)
+        ) / 3
+        return torch.mean(torch.mean((pred_matrix - true_matrix) ** 2, dim=(1, 2)) + self.weight * regularizer)
