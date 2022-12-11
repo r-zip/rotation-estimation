@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 
-from .constants import DEFAULT_BATCH_SIZE, DEFAULT_EPOCHS, DEFAULT_LR, DEFAULT_NUM_POINTS, MODEL_PATH
+from .constants import DEFAULT_EPOCHS, DEFAULT_LR, MODEL_PATH
 from .metrics import so3_distance
 
 METRICS = ["so3", "euler"]

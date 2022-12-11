@@ -12,14 +12,14 @@ class OrthogonalMSELoss(_Loss):
         if self.six_d:
             return torch.mean(
                 torch.sum((output - true_matrix[:, :2, :]) ** 2, dim=(1, 2))
-                + self.weight * torch.mean((output[:, 0, :] * output[:, 1, :]).sum(dim=1))
+                + self.weight * torch.mean(torch.abs(output[:, 0, :] * output[:, 1, :]).sum(dim=1))
             )
         return torch.mean(
             torch.sum((pred_matrix - true_matrix) ** 2)
             + self.weight
             * (
-                torch.mean((output[:, 0, :] * output[:, 1, :]).sum(dim=1))
-                + torch.mean((output[:, 0, :] * output[:, 2, :]).sum(dim=1))
-                + torch.mean((output[:, 1, :] * output[:, 2, :]).sum(dim=1))
+                torch.mean(torch.abs(output[:, 0, :] * output[:, 1, :]).sum(dim=1))
+                + torch.mean(torch.abs(output[:, 0, :] * output[:, 2, :]).sum(dim=1))
+                + torch.mean(torch.abs(output[:, 1, :] * output[:, 2, :]).sum(dim=1))
             )
         )

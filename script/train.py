@@ -2,6 +2,7 @@ import json
 from enum import Enum
 from typing import Optional
 
+import numpy as np
 import torch
 import torch.autograd
 import torch.backends
@@ -38,11 +39,12 @@ def train_once(
     if debug:
         torch.autograd.set_detect_anomaly(True)
 
-    # if device is None and torch.backends.mps.is_available():
-    #     device = torch.device("mps")
-    # elif device is None:
-    #     device = torch.device("cpu")
-    device = torch.device("cpu")
+    if device is None and torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif device is None and torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
 
     model = PointNetRotationRegression(layer_norm=layer_norm, svd_projection=svd_projection, six_d=six_d).to(device)
 
@@ -54,7 +56,9 @@ def train_once(
 
     train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(dataset=val_set, batch_size=batch_size, shuffle=True)
-    test_loader = DataLoader(dataset=test_set, batch_size=batch_size, shuffle=True)
+
+    # TODO: run on test set
+    # test_loader = DataLoader(dataset=test_set, batch_size=batch_size, shuffle=True)
 
     history = train(model, train_loader, val_loader, loss_fn=loss_fn, lr=lr, epochs=epochs)
 
@@ -91,13 +95,11 @@ def main(
     layer_norm: bool = DEFAULT_LAYER_NORM,
     batch_size: int = DEFAULT_BATCH_SIZE,
     device: str = "cpu",
+    runs: int = 10,
     debug: bool = False,
 ):
-    # r = [1000, 500, 0, 0.05, 0.001]
-    # rep = [x for x in range(5)]
-    r = [0.05, 0.001]
-    rep = [x for x in range(2)]
-    for i in rep:
+    r = np.logspace(-3, 3, 7)[::-1]
+    for i in range(runs):
         for j in r:
             train_once(
                 lr=lr,
@@ -109,6 +111,7 @@ def main(
                 six_d=True,
                 iteration=i,
                 regularization=j,
+                device=device,
             )
 
             train_once(
@@ -120,11 +123,9 @@ def main(
                 debug=debug,
                 six_d=False,
                 iteration=i,
-                regularization=0.0,
+                regularization=j,
                 device=device,
             )
-
-    gen_graph(r, rep)
 
 
 if __name__ == "__main__":
