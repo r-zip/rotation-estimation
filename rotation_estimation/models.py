@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 
 import torch
 import torch.nn as nn
@@ -57,7 +57,7 @@ class PointNetRotationRegression(nn.Module):
                 layer_norm=layer_norm,
             )
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         point_net_embedding = self.point_net(x)
         if self.six_d:
             raw_matrix = self.head_mlp(point_net_embedding).reshape((point_net_embedding.shape[0], 2, 3))
@@ -65,8 +65,8 @@ class PointNetRotationRegression(nn.Module):
             raw_matrix = self.head_mlp(point_net_embedding).reshape((point_net_embedding.shape[0], 3, 3))
 
         if (not self.six_d) and self.svd_projection:
-            return svd_projection(raw_matrix)
+            return raw_matrix, svd_projection(raw_matrix)
         elif self.six_d:
-            return gram_schmidt(raw_matrix)
+            return raw_matrix, gram_schmidt(raw_matrix)
 
-        return raw_matrix
+        return raw_matrix, raw_matrix

@@ -64,8 +64,8 @@ def random_rotations(n: int, seed: Optional[int] = None) -> torch.Tensor:
     """
     # TODO: vectorize
     matrices = []
-    for _ in range(n):
-        matrices.append(random_rotation(seed))
+    for k in range(n):
+        matrices.append(random_rotation(seed + k))
 
     return torch.stack(matrices)
 

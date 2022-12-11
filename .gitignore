@@ -5,3 +5,7 @@
 *.pyc
 .DS_Store
 *.pyc
+/models/
+/plots/
+/results/
+/results_presentation/

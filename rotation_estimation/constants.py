@@ -2,5 +2,16 @@ from pathlib import Path
 
 DEFAULT_POINTS_PER_SAMPLE = 256
 DEFAULT_BATCH_SIZE = 10
-DATASET_PATH = Path(__file__).parents[1] / "data/ShapeNetAirplanes"
-assert DATASET_PATH.exists()
+REPO_ROOT = Path(__file__).parents[1]
+DATASET_PATH = REPO_ROOT / "data/ShapeNetAirplanes"
+RESULTS_PATH = REPO_ROOT / "results"
+PLOTS_PATH = REPO_ROOT / "plots"
+MODEL_PATH = REPO_ROOT / "models"
+OBJ_FILE_PATH = DATASET_PATH / "02691156/1a04e3eab45ca15dd86060f189eb133/models/model_normalized.obj"
+
+DEFAULT_LR = 1e-3
+DEFAULT_NUM_POINTS = 100
+DEFAULT_BATCH_SIZE = 10
+DEFAULT_EPOCHS = 100
+DEFAULT_LAYER_NORM = False
+DEFAULT_REGULARIZATION = 0.1

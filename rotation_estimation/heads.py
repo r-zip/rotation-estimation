@@ -37,7 +37,7 @@ def gram_schmidt(x: torch.Tensor) -> torch.Tensor:
     # references:
     # https://en.wikipedia.org/wiki/Gram–Schmidt_process#The_Gram–Schmidt_process
     # https://arxiv.org/pdf/1812.07035.pdf
-    y = torch.zeros((x.shape[0], 3, 3))
+    y = torch.zeros((x.shape[0], 3, 3)).to(x.device)
     y[:, 0, :] = _normalize(x[:, 0, :])
     proj = (y[:, 0, :].clone() * x[:, 1, :]).sum(dim=-1)
     y[:, 1, :] = _normalize(x[:, 1, :] - proj[:, None] * y[:, 0, :].clone())
