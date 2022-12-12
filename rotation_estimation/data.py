@@ -63,7 +63,7 @@ class ProcessedDataset(Dataset):
         self._samples.clear()
         for f in sorted(self._file_list):
             sample = torch.load(f)
-            self._samples.append((sample["point_cloud"].to(self.device), sample["rotation"].to(self.device)))
+            self._samples.append((sample["point_cloud"].squeeze().to(self.device), sample["rotation"].to(self.device)))
 
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
         if not self._samples:

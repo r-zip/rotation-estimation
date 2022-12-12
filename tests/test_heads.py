@@ -14,7 +14,7 @@ def test_svd_projection():
     for k in range(R.shape[0]):
         assert np.abs(torch.linalg.det(R_hat[k]).item() - 1) < 1e-4
         assert torch.allclose(R_hat[k].T @ R_hat[k], torch.eye(3), rtol=1e-6, atol=1e-6)
-        assert torch.linalg.norm(R_hat[k] - R[k], ord="fro") < 0.001
+        assert torch.linalg.norm(R_hat[k] - R[k], ord="fro").item() < 0.01
 
 
 def test_gram_schmidt():
