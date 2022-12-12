@@ -9,10 +9,14 @@ import torch.backends
 import typer
 from torch.utils.data import DataLoader
 
-from rotation_estimation.constants import (DEFAULT_BATCH_SIZE, DEFAULT_EPOCHS,
-                                           DEFAULT_LAYER_NORM, DEFAULT_LR,
-                                           DEFAULT_REGULARIZATION,
-                                           RESULTS_PATH)
+from rotation_estimation.constants import (
+    DEFAULT_BATCH_SIZE,
+    DEFAULT_EPOCHS,
+    DEFAULT_LAYER_NORM,
+    DEFAULT_LR,
+    DEFAULT_REGULARIZATION,
+    RESULTS_PATH,
+)
 from rotation_estimation.data import ProcessedDataset
 from rotation_estimation.evaluation import plot_train_test
 from rotation_estimation.losses import OrthogonalMSELoss
@@ -95,7 +99,7 @@ def main(
     layer_norm: bool = DEFAULT_LAYER_NORM,
     batch_size: int = DEFAULT_BATCH_SIZE,
     device: str = "cpu",
-    runs: int = 10,
+    runs: int = 5,
     debug: bool = False,
 ):
     r = [0.0, *np.logspace(-3, 3, 7)]
