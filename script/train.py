@@ -18,7 +18,6 @@ from rotation_estimation.constants import (
     RESULTS_PATH,
 )
 from rotation_estimation.data import ProcessedDataset
-from rotation_estimation.evaluation import plot_train_test
 from rotation_estimation.losses import OrthogonalMSELoss
 from rotation_estimation.models import PointNetRotationRegression
 from rotation_estimation.train import train
@@ -73,24 +72,6 @@ def train_once(
     else:
         with open(RESULTS_PATH / f"nine_d_{regularization}_history_{iteration}.json", "w") as f:
             json.dump(history, f)
-
-
-def gen_graph(r, rep):
-    x = []
-    temp = []
-    for u in rep:
-        with open(RESULTS_PATH / f"nine_d_history_{u}.json", "r") as f:
-            contents = json.load(f)
-            temp.append(contents)
-    x.append(temp)
-    for i in r:
-        temp = []
-        for j in rep:
-            with open(f"six_d_{i}_history_{j}.json", "r") as f:
-                contents = json.load(f)
-                temp.append(contents)
-        x.append(temp)
-    plot_train_test(x, ["9D Baseline"] + [f"6D r={x}" for x in r], ["mse", "so3", "euler"], 100)
 
 
 def main(
