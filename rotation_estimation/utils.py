@@ -7,6 +7,10 @@ import torch
 from matplotlib.figure import Figure
 
 
+def identity(x):
+    return x
+
+
 def synset_and_model_to_path(synset_id: str, model_id: str) -> Path:
     return Path(__file__).parents[1] / f"data/ShapeNetCore.v2/{synset_id}/{model_id}"
 
@@ -64,8 +68,8 @@ def random_rotations(n: int, seed: Optional[int] = None) -> torch.Tensor:
     """
     # TODO: vectorize
     matrices = []
-    for _ in range(n):
-        matrices.append(random_rotation(seed))
+    for k in range(n):
+        matrices.append(random_rotation(seed + k))
 
     return torch.stack(matrices)
 
@@ -83,6 +87,7 @@ def visualize_rotations(show: bool = False) -> Figure:
     Returns:
         A matplotlib Figure with of the scatterplot.
     """
+    # reference: https://matplotlib.org/stable/gallery/mplot3d/scatter3d.html
     fig = plt.figure()
     ax = fig.add_subplot(projection="3d")
     R = random_rotations(500).numpy()

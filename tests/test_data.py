@@ -1,16 +1,17 @@
-from pathlib import Path
-
 import pytest
+import torch
+from torch.utils.data import DataLoader
 
-from rotation_estimation.data import get_point_cloud_data_loader
+from rotation_estimation.constants import PROCESSED_DATA_PATH
+from rotation_estimation.data import ProcessedDataset
 
-DATA_PATH = Path(__file__).parents[1] / "data/ShapeNetAirplanes/"
 
-
-@pytest.mark.skipif(not DATA_PATH.exists(), reason="ShapeNetAirplanes is not unzipped.")
-@pytest.mark.parametrize("batch_size,points_per_sample", [(5, 100), (10, 1000)])
-def test_point_cloud_dataloader(batch_size: int, points_per_sample: int):
-    pc_dataloader = get_point_cloud_data_loader(DATA_PATH, batch_size=batch_size, points_per_sample=points_per_sample)
-    point_clouds, rotations = next(iter(pc_dataloader))
-    assert point_clouds.size() == (batch_size, points_per_sample, 3)
+@pytest.mark.skipif(not PROCESSED_DATA_PATH.exists(), reason="Processed dataset does not exist.")
+@pytest.mark.parametrize("batch_size", [5, 10, 100])
+def test_point_cloud_dataloader(batch_size: int):
+    pc_dataloader = DataLoader(ProcessedDataset(split="train"), batch_size=batch_size)
+    original_point_cloud, rotated_point_clouds, rotations = next(iter(pc_dataloader))
+    assert rotated_point_clouds.shape[0] == batch_size
+    assert rotated_point_clouds.shape[2] == 3
     assert rotations.size() == (batch_size, 3, 3)
+    assert torch.allclose(torch.matmul(original_point_cloud, rotations), rotated_point_clouds)
