@@ -2,35 +2,40 @@ from pathlib import Path
 from typing import Tuple, Union
 
 import torch
-# from pytorch3d.io import IO
-# from pytorch3d.ops import sample_points_from_meshes
 from torch.utils.data import Dataset
 
-# from .constants import OBJ_FILE_PATH
-# from .utils import random_rotations
+try:
+    from pytorch3d.io import IO
+    from pytorch3d.ops import sample_points_from_meshes
 
-# class RotationData(Dataset):
-#     def __init__(
-#         self,
-#         mesh_file_path: str = OBJ_FILE_PATH,
-#         num_points: int = 100,
-#         device: str = "cpu",
-#         dataset_size: int = 2400,
-#         seed: int = 1234,
-#     ) -> None:
-#         mesh = IO().load_mesh(mesh_file_path, device=device)
-#         self.point_cloud = sample_points_from_meshes(
-#             mesh, num_samples=num_points, return_normals=False, return_textures=False
-#         ).squeeze()
-#         self.dataset_size = dataset_size
-#         self.rotation_matrices = random_rotations(self.dataset_size, seed=seed)
+    from .constants import OBJ_FILE_PATH
+    from .utils import random_rotations
 
-#     def __len__(self) -> int:
-#         return self.dataset_size
+    class RotationData(Dataset):
+        def __init__(
+            self,
+            mesh_file_path: str = OBJ_FILE_PATH,
+            num_points: int = 100,
+            device: str = "cpu",
+            dataset_size: int = 2400,
+            seed: int = 1234,
+        ) -> None:
+            mesh = IO().load_mesh(mesh_file_path, device=device)
+            self.point_cloud = sample_points_from_meshes(
+                mesh, num_samples=num_points, return_normals=False, return_textures=False
+            ).squeeze()
+            self.dataset_size = dataset_size
+            self.rotation_matrices = random_rotations(self.dataset_size, seed=seed)
 
-#     @torch.no_grad()
-#     def __getitem__(self, idx: int) -> torch.Tensor:
-#         return torch.matmul(self.point_cloud, self.rotation_matrices[idx]), self.rotation_matrices[idx]
+        def __len__(self) -> int:
+            return self.dataset_size
+
+        @torch.no_grad()
+        def __getitem__(self, idx: int) -> torch.Tensor:
+            return torch.matmul(self.point_cloud, self.rotation_matrices[idx]), self.rotation_matrices[idx]
+
+except ImportError:
+    pass
 
 
 class ProcessedDataset(Dataset):
