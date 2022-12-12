@@ -4,6 +4,7 @@ DEFAULT_POINTS_PER_SAMPLE = 256
 DEFAULT_BATCH_SIZE = 10
 REPO_ROOT = Path(__file__).parents[1]
 DATASET_PATH = REPO_ROOT / "data/ShapeNetAirplanes"
+PROCESSED_DATA_PATH = REPO_ROOT / "data/processed"
 RESULTS_PATH = REPO_ROOT / "results"
 PLOTS_PATH = REPO_ROOT / "plots"
 MODEL_PATH = REPO_ROOT / "models"

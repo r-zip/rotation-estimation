@@ -7,6 +7,10 @@ import torch
 from matplotlib.figure import Figure
 
 
+def identity(x):
+    return x
+
+
 def synset_and_model_to_path(synset_id: str, model_id: str) -> Path:
     return Path(__file__).parents[1] / f"data/ShapeNetCore.v2/{synset_id}/{model_id}"
 

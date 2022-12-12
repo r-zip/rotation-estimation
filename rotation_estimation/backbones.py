@@ -47,8 +47,24 @@ class TNet(nn.Module):
 
 
 def build_point_net(
-    output_dimension: int = 512, final_activation: Optional[nn.Module] = None, layer_norm: bool = True
+    output_dimension: int = 512,
+    final_activation: Optional[nn.Module] = None,
+    layer_norm: bool = True,
+    kind: str = "simplified",
 ) -> nn.Module:
+    if kind == "simplified":
+        return nn.Sequential(
+            nn.Linear(3, 128),
+            nn.ReLU(),
+            nn.Linear(128, 64),
+            nn.ReLU(),
+            nn.AdaptiveMaxPool2d(output_size=(1, 64)),
+            nn.Linear(64, output_dimension),
+            nn.ReLU(),
+            nn.Flatten(),
+        )
+
+    # original architecture
     return nn.Sequential(
         TNet(layer_norm=layer_norm),
         build_mlp(3, 64, [64], layer_norm=layer_norm, final_activation=nn.ReLU()),
