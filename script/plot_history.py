@@ -39,7 +39,16 @@ def combine_histories(history_dir: Path) -> List[Dict[str, np.ndarray]]:
                         median = np.nanmedian(history_all_runs[split][key], axis=0)
                         quartiles = np.quantile(history_all_runs[split][key], [0.25, 0.75], axis=0)
                         summaries.append(
-                            dict(dim=dim, reg=reg, split=split, key=key, mean=mean, median=median, quartiles=quartiles)
+                            dict(
+                                dim=dim,
+                                reg=reg,
+                                split=split,
+                                key=key,
+                                mean=mean,
+                                median=median,
+                                quartiles=quartiles,
+                                ends=np.array(history_all_runs[split][key])[:, -1],
+                            )
                         )
 
     return summaries

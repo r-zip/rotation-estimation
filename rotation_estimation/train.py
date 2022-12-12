@@ -33,12 +33,12 @@ def train(
     for epoch in range(epochs):  # loop over the dataset multiple times
         running_loss = 0.0
         train_metrics = []
-        for step, (inputs, labels) in enumerate(train_data_loader):
+        for step, (original, rotated, labels) in enumerate(train_data_loader):
             # zero the parameter gradients
             optimizer.zero_grad()
 
             # forward + backward + optimize
-            raw, projected = model(inputs)
+            raw, projected = model(original, rotated)
             loss = loss_fn(raw, projected, labels)
             loss.backward()
             optimizer.step()
@@ -57,8 +57,8 @@ def train(
                 with torch.no_grad():
                     avg_val_loss = 0
                     n_val = 0
-                    for val_input, val_label in val_data_loader:
-                        val_raw, val_projected = model(val_input)
+                    for val_original, val_rotated, val_label in val_data_loader:
+                        val_raw, val_projected = model(val_original, val_rotated)
                         avg_val_loss += loss_fn(val_raw, val_projected, val_label).item()
                         n_val += 1
                         val_metrics.append(compute_metrics(val_projected, val_label))

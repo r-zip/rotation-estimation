@@ -14,8 +14,12 @@ def _arccos_trace(R: torch.Tensor, unit: str = "radians") -> torch.Tensor:
     return scale * torch.arccos((torch.trace(R) - 1) / 2)
 
 
-# http://www.boris-belousov.net/2016/12/01/quat-dist/
 def so3_distance(P: torch.Tensor, Q: torch.Tensor, unit: str = "radians") -> torch.Tensor:
+    """
+    Compute the SO(3) distance between two rotations.
+
+    Reference: http://www.boris-belousov.net/2016/12/01/quat-dist/
+    """
     R = torch.matmul(P, Q.transpose(2, 1))
     if len(P.shape) == 3:
         num_matrices = P.shape[0]

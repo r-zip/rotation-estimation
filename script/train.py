@@ -9,14 +9,10 @@ import torch.backends
 import typer
 from torch.utils.data import DataLoader
 
-from rotation_estimation.constants import (
-    DEFAULT_BATCH_SIZE,
-    DEFAULT_EPOCHS,
-    DEFAULT_LAYER_NORM,
-    DEFAULT_LR,
-    DEFAULT_REGULARIZATION,
-    RESULTS_PATH,
-)
+from rotation_estimation.constants import (DEFAULT_BATCH_SIZE, DEFAULT_EPOCHS,
+                                           DEFAULT_LAYER_NORM, DEFAULT_LR,
+                                           DEFAULT_REGULARIZATION,
+                                           RESULTS_PATH)
 from rotation_estimation.data import ProcessedDataset
 from rotation_estimation.losses import OrthogonalMSELoss
 from rotation_estimation.models import PointNetRotationRegression
@@ -49,7 +45,7 @@ def train_once(
     else:
         device = torch.device("cpu")
 
-    model = PointNetRotationRegression(layer_norm=layer_norm, svd_projection=svd_projection, six_d=six_d).to(device)
+    model = PointNetRotationRegression(layer_norm=layer_norm, svd=svd_projection, six_d=six_d).to(device)
 
     train_set = ProcessedDataset(split="train", device=device)
     val_set = ProcessedDataset(split="val", device=device)

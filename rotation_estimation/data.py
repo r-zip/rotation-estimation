@@ -4,38 +4,55 @@ from typing import Tuple, Union
 import torch
 from torch.utils.data import Dataset
 
-try:
+if torch.__version__.startswith("1.12"):
     from pytorch3d.io import IO
     from pytorch3d.ops import sample_points_from_meshes
 
-    from .constants import OBJ_FILE_PATH
-    from .utils import random_rotations
+    from .constants import SPLITS_PATH
+    from .utils import random_rotation
 
     class RotationData(Dataset):
         def __init__(
             self,
-            mesh_file_path: str = OBJ_FILE_PATH,
-            num_points: int = 100,
+            split: str,
+            num_points: int = 256,
             device: str = "cpu",
-            dataset_size: int = 2400,
-            seed: int = 1234,
+            dataset_size: int = 10_000,
         ) -> None:
-            mesh = IO().load_mesh(mesh_file_path, device=device)
-            self.point_cloud = sample_points_from_meshes(
-                mesh, num_samples=num_points, return_normals=False, return_textures=False
-            ).squeeze()
+            self.num_points = num_points
+            self.split_dir = SPLITS_PATH / split
+            assert self.split_dir.exists(), "Split directory does not exist!"
+
+            meshes = []
+            models = []
+            for folder in self.split_dir.iterdir():
+                models.append(folder.name)
+                obj_file = folder / "models" / "model_normalized.obj"
+                meshes.append(IO().load_mesh(obj_file, device=device))
+
+            self.meshes = meshes
+            self.models = models
+            self.num_models = len(models)
             self.dataset_size = dataset_size
-            self.rotation_matrices = random_rotations(self.dataset_size, seed=seed)
 
         def __len__(self) -> int:
             return self.dataset_size
 
         @torch.no_grad()
-        def __getitem__(self, idx: int) -> torch.Tensor:
-            return torch.matmul(self.point_cloud, self.rotation_matrices[idx]), self.rotation_matrices[idx]
-
-except ImportError:
-    pass
+        def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+            point_cloud = sample_points_from_meshes(
+                self.meshes[idx % self.num_models],
+                num_samples=self.num_points,
+                return_normals=False,
+                return_textures=False,
+            ).squeeze()
+            rotation_matrix = random_rotation()
+            return (
+                self.models[idx % self.num_models],
+                point_cloud,
+                torch.matmul(point_cloud, rotation_matrix),
+                rotation_matrix,
+            )
 
 
 class ProcessedDataset(Dataset):
@@ -63,9 +80,15 @@ class ProcessedDataset(Dataset):
         self._samples.clear()
         for f in sorted(self._file_list):
             sample = torch.load(f)
-            self._samples.append((sample["point_cloud"].squeeze().to(self.device), sample["rotation"].to(self.device)))
+            self._samples.append(
+                (
+                    sample["original_point_cloud"].squeeze().to(self.device),
+                    sample["rotated_point_cloud"].squeeze().to(self.device),
+                    sample["rotation"].to(self.device),
+                )
+            )
 
-    def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
+    def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         if not self._samples:
             self._load()
 
