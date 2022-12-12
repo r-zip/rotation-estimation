@@ -7,7 +7,6 @@ def svd_projection(R: torch.Tensor, eps: float = 0.001, so3: bool = True) -> tor
 
     Reference: https://proceedings.neurips.cc/paper/2020/file/fec3392b0dc073244d38eba1feb8e6b7-Paper.pdf
     """
-    # TODO: test
     U, _, Vh = torch.linalg.svd(R + torch.stack([eps * torch.eye(3) for _ in range(R.shape[0])]))
     if not so3:
         return torch.matmul(U, Vh)
@@ -31,10 +30,13 @@ def _normalize(x: torch.Tensor) -> torch.Tensor:
 
 
 def gram_schmidt(x: torch.Tensor) -> torch.Tensor:
-    """Perform Gram-Schmidt to obtain valid rotation matrices."""
-    # references:
-    # https://en.wikipedia.org/wiki/Gram–Schmidt_process#The_Gram–Schmidt_process
-    # https://arxiv.org/pdf/1812.07035.pdf
+    """
+    Perform Gram-Schmidt to obtain valid rotation matrices (element of SO(3)).
+
+    References:
+        https://en.wikipedia.org/wiki/Gram–Schmidt_process#The_Gram–Schmidt_process
+        https://arxiv.org/pdf/1812.07035.pdf
+    """
     y = torch.zeros((x.shape[0], 3, 3)).to(x.device)
     y[:, 0, :] = _normalize(x[:, 0, :])
     proj = (y[:, 0, :].clone() * x[:, 1, :]).sum(dim=-1)
