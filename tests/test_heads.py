@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from rotation_estimation.heads import gram_schmidt, svd_projection
+from rotation_estimation.projections import gram_schmidt, svd_projection
 from rotation_estimation.utils import random_rotation
 
 

@@ -5,7 +5,7 @@ import torch.nn as nn
 
 from .backbones import build_point_net
 from .blocks import build_mlp
-from .heads import gram_schmidt, svd_projection
+from .projections import gram_schmidt, svd_projection
 from .utils import identity
 
 
