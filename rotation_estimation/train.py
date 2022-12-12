@@ -1,35 +1,14 @@
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 
-from .constants import DEFAULT_EPOCHS, DEFAULT_LR, MODEL_PATH
-from .metrics import so3_distance
-
-METRICS = ["so3", "euler"]
-
-
-def compute_metrics(pred: torch.Tensor, truth: torch.Tensor) -> Dict[str, float]:
-    with torch.no_grad():
-        try:
-            so3 = so3_distance(pred, truth).sum().item()
-        except ValueError:
-            so3 = np.nan
-        return {"so3": so3, "euler": np.nan, "n": pred.shape[0]}
-
-
-def avg_metrics(metrics: List[Dict[str, float]]) -> Dict[str, float]:
-    output_dict = {}
-    for key in METRICS:
-        output_dict[key] = sum([m * n for m, n in zip([m[key] for m in metrics], [m["n"] for m in metrics])]) / sum(
-            [m["n"] for m in metrics]
-        )
-    return output_dict
+from .constants import DEFAULT_EPOCHS, DEFAULT_LR, METRICS, MODEL_PATH
+from .metrics import avg_metrics, compute_metrics
 
 
 def train(

@@ -1,9 +1,4 @@
-from typing import List
-
 import torch
-import torch.nn as nn
-
-from .blocks import build_mlp
 
 
 def svd_projection(R: torch.Tensor, eps: float = 0.001, so3: bool = True) -> torch.Tensor:
