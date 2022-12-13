@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.optim import Adam
+from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
 
 from .constants import DEFAULT_EPOCHS, DEFAULT_LR, METRICS, MODEL_PATH
@@ -22,6 +23,7 @@ def train(
     loss_fn: Callable = F.mse_loss,
 ) -> Dict[str, Dict[str, List[float]]]:
     optimizer = Adam(model.parameters(), lr=lr)
+    scheduler = CosineAnnealingLR(optimizer, T_max=10, eta_min=1e-9)
 
     # this loop is based on https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html#train-the-network
     history = {
@@ -33,6 +35,7 @@ def train(
     for epoch in range(epochs):  # loop over the dataset multiple times
         running_loss = 0.0
         train_metrics = []
+        n_train = 0
         for step, (original, rotated, labels) in enumerate(train_data_loader):
             # zero the parameter gradients
             optimizer.zero_grad()
@@ -46,11 +49,13 @@ def train(
             # print statistics
             running_loss += loss.item()
             train_metrics.append(compute_metrics(projected, labels))
+            n_train += 1
 
             val_metrics = []
             if (sum_steps + 1) % val_every == 0:
-                avg_train_loss = running_loss / val_every
+                avg_train_loss = running_loss / n_train
                 print(f"[step: {sum_steps + 1:5d}] train loss: {avg_train_loss:.3f}")
+                n_train = 0
                 running_loss = 0.0
 
                 model.eval()
@@ -77,6 +82,9 @@ def train(
                 avg_train_metrics = avg_metrics(train_metrics)
                 avg_val_metrics = avg_metrics(val_metrics)
 
+                print(f"[step: {sum_steps + 1:5d}] train so3: {avg_train_metrics['so3']:.3f}")
+                print(f"[step: {sum_steps + 1:5d}] val so3: {avg_val_metrics['so3']:.3f}")
+
                 for key in METRICS:
                     history["train"][key].append(avg_train_metrics[key])
                     history["val"][key].append(avg_val_metrics[key])
@@ -86,6 +94,8 @@ def train(
                 val_metrics.clear()
 
             sum_steps += 1
+
+        scheduler.step()
 
     if model_path is None:
         model_path = MODEL_PATH / "model.pt"
