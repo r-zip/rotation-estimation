@@ -85,49 +85,49 @@ def main(
     runs: int = 5,
     debug: bool = False,
 ):
-    r = [0.0, *np.logspace(-3, 3, 7)]
+    r = [0.0, *np.logspace(-3, 1, 7)]
     for i in range(runs):
         for j in r:
-            # # six-d
-            # train_once(
-            #     lr=lr,
-            #     epochs=epochs,
-            #     layer_norm=layer_norm,
-            #     batch_size=batch_size,
-            #     svd_projection=False,
-            #     debug=debug,
-            #     six_d=True,
-            #     iteration=i,
-            #     regularization=j,
-            #     device=device,
-            # )
-
-            # # nine-d w/ SVD
-            # train_once(
-            #     lr=lr,
-            #     epochs=epochs,
-            #     layer_norm=layer_norm,
-            #     batch_size=batch_size,
-            #     svd_projection=True,
-            #     debug=debug,
-            #     six_d=False,
-            #     iteration=i,
-            #     regularization=j,
-            #     device=device,
-            # )
-
-            # multi-head
+            # six-d
             train_once(
                 lr=lr,
                 epochs=epochs,
                 layer_norm=layer_norm,
                 batch_size=batch_size,
+                svd_projection=False,
                 debug=debug,
-                multi_head=True,
+                six_d=True,
                 iteration=i,
                 regularization=j,
                 device=device,
             )
+
+            # nine-d w/ SVD
+            train_once(
+                lr=lr,
+                epochs=epochs,
+                layer_norm=layer_norm,
+                batch_size=batch_size,
+                svd_projection=True,
+                debug=debug,
+                six_d=False,
+                iteration=i,
+                regularization=j,
+                device=device,
+            )
+
+        # multi-head
+        train_once(
+            lr=lr,
+            epochs=epochs,
+            layer_norm=layer_norm,
+            batch_size=batch_size,
+            debug=debug,
+            multi_head=True,
+            iteration=i,
+            regularization=j,
+            device=device,
+        )
 
 
 if __name__ == "__main__":

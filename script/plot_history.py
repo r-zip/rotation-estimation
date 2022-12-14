@@ -172,7 +172,20 @@ def main(history_dir: Path, plots_dir: Path = Path("./plots")):
         plt.savefig(plots_dir / f"multi_head_{key}_0.0.png", dpi=300)
         plt.close()
 
-    print(pd.DataFrame(records))
+        multi_head_train_final_mean = multi_head_train["mean"][-1]
+        multi_head_val_final_mean = multi_head_val["mean"][-1]
+        records.append(
+            dict(
+                key=key,
+                regularization=0.0,
+                multi_head_train=multi_head_train_final_mean,
+                multi_head_val=multi_head_val_final_mean,
+            )
+        )
+
+    df_raw = pd.DataFrame(records)
+    df = df_raw.groupby(["key", "regularization"]).mean()
+    df.to_csv("./summary.csv", index=False)
 
 
 if __name__ == "__main__":
