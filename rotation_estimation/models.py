@@ -9,6 +9,69 @@ from .projections import gram_schmidt, svd_projection
 from .utils import identity
 
 
+class MultiHead(nn.Module):
+    def __init__(
+        self,
+        point_net_embedding_dim: int = 32,
+        head_hidden_layer_sizes: List[int] = None,
+        layer_norm: bool = False,
+        siamese: bool = True,
+    ) -> None:
+        super().__init__()
+        head_hidden_layer_sizes = head_hidden_layer_sizes or [128, 64]
+        self.projection = svd_projection
+        self.input_dimension = 2 * point_net_embedding_dim if siamese else point_net_embedding_dim
+        self.mlps = [
+            build_mlp(
+                input_dimension=self.input_dimension,
+                output_dimension=6,
+                hidden_layer_sizes=head_hidden_layer_sizes,
+                final_activation=None,
+                layer_norm=layer_norm,
+            )
+            for _ in range(6)
+        ]
+
+    def _multi_head_embedding(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Accepts bxd as input, produces bx3x3 as output
+        """
+        six_d_outputs = torch.stack([gram_schmidt(mlp(x).reshape(x.shape[0], 2, 3)) for mlp in self.mlps])
+
+        # init outputs
+        output = torch.zeros((x.shape[0], 6, 3, 3))
+
+        # head 1 (first two rows)
+        output[:, 0, :3, :3] = six_d_outputs[0].clone()
+
+        # head 2 (first and third row), multiply by -1 to preserve det(R) == 1
+        output[:, 1, 0, :3] = -six_d_outputs[1, :, 0, :].clone()
+        output[:, 1, 2, :3] = -six_d_outputs[1, :, 1, :].clone()
+        output[:, 1, 1, :3] = -six_d_outputs[1, :, 2, :].clone()
+
+        # head 3 (last two rows)
+        output[:, 2, 1:, :3] = six_d_outputs[2, :, :2, :3].clone()
+        output[:, 2, 0, :3] = six_d_outputs[2, :, 2, :3].clone()
+
+        # head 4 (first two columns)
+        output[:, 3, :3, :3] = six_d_outputs[3].clone().transpose(2, 1)
+
+        # head 5 (first and last column), multiply by -1 to preserve det(R) == 1
+        output[:, 4, :3, 0] = -six_d_outputs[4, :, 0, :].clone()
+        output[:, 4, :3, 2] = -six_d_outputs[4, :, 1, :].clone()
+        output[:, 4, :3, 1] = -six_d_outputs[4, :, 2, :].clone()
+
+        # head 6 (last two columns)
+        output[:, 5, :3, 1:] = six_d_outputs[5, :, :2, :].clone().transpose(2, 1)
+        output[:, 5, :3, 0] = six_d_outputs[5, :, 2, :].clone()
+
+        return output
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        emb = self._multi_head_embedding(x).mean(axis=1).squeeze()
+        return svd_projection(emb)
+
+
 class PointNetRotationRegression(nn.Module):
     def __init__(
         self,
@@ -16,6 +79,7 @@ class PointNetRotationRegression(nn.Module):
         head_hidden_layer_sizes: List[int] = None,
         layer_norm: bool = False,
         point_net: str = "simplified",
+        multi_head: bool = False,
         svd: bool = False,
         six_d: bool = False,
         siamese: bool = True,
