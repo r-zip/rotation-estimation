@@ -88,6 +88,7 @@ class PointNetRotationRegression(nn.Module):
         self.svd_projection = svd
         self.six_d = six_d
         self.siamese = siamese
+        self.multi_head = multi_head
 
         head_hidden_layer_sizes = head_hidden_layer_sizes or [128, 64]
 
@@ -98,13 +99,21 @@ class PointNetRotationRegression(nn.Module):
             kind=point_net,
         )
 
-        self.head_mlp = build_mlp(
-            input_dimension=2 * point_net_embedding_dim if siamese else point_net_embedding_dim,
-            output_dimension=6 if six_d else 9,
-            hidden_layer_sizes=head_hidden_layer_sizes,
-            final_activation=None,
-            layer_norm=layer_norm,
-        )
+        if self.multi_head:
+            self.head = MultiHead(
+                point_net_embedding_dim=32,
+                head_hidden_layer_sizes=head_hidden_layer_sizes,
+                layer_norm=layer_norm,
+                siamese=siamese,
+            )
+        else:
+            self.head = build_mlp(
+                input_dimension=2 * point_net_embedding_dim if siamese else point_net_embedding_dim,
+                output_dimension=6 if six_d else 9,
+                hidden_layer_sizes=head_hidden_layer_sizes,
+                final_activation=None,
+                layer_norm=layer_norm,
+            )
 
         self.output_shape = (2, 3) if six_d else (3, 3)
 
@@ -125,7 +134,7 @@ class PointNetRotationRegression(nn.Module):
         x_emb = self.point_net(x)
         if self.siamese:
             z_emb = self.point_net(z)
-            raw_matrix = self.head_mlp(torch.concat([x_emb, z_emb], dim=1)).reshape(batch_size, *self.output_shape)
+            raw_matrix = self.head(torch.concat([x_emb, z_emb], dim=1)).reshape(batch_size, *self.output_shape)
         else:
-            raw_matrix = self.head_mlp(x_emb).reshape((batch_size, *self.output_shape))
+            raw_matrix = self.head(x_emb).reshape((batch_size, *self.output_shape))
         return raw_matrix, self.projection(raw_matrix)
