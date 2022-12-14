@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 from rotation_estimation.constants import (DEFAULT_BATCH_SIZE, DEFAULT_EPOCHS,
                                            DEFAULT_LAYER_NORM, DEFAULT_LR,
                                            DEFAULT_REGULARIZATION,
-                                           RESULTS_PATH)
+                                           REGULARIZATIONS, RESULTS_PATH)
 from rotation_estimation.data import ProcessedDataset
 from rotation_estimation.losses import OrthogonalMSELoss
 from rotation_estimation.models import PointNetRotationRegression
@@ -85,9 +85,8 @@ def main(
     runs: int = 5,
     debug: bool = False,
 ):
-    r = [0.0, *np.logspace(-3, 1, 7)]
     for i in range(runs):
-        for j in r:
+        for j in REGULARIZATIONS:
             # six-d
             train_once(
                 lr=lr,
@@ -125,7 +124,7 @@ def main(
             debug=debug,
             multi_head=True,
             iteration=i,
-            regularization=j,
+            regularization=0.0,
             device=device,
         )
 

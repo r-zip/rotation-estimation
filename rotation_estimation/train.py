@@ -21,9 +21,13 @@ def train(
     model_path: Optional[Path] = None,
     loss_fn: Callable = F.mse_loss,
 ) -> Dict[str, Dict[str, List[float]]]:
+    """
+    This function's main loop used the PyTorch tutorial at
+    https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html#train-the-network as a starting point.
+    """
+
     optimizer = Adam(model.parameters(), lr=lr)
 
-    # this loop is based on https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html#train-the-network
     history = {
         "train": {"mse": [], "so3": [], "euler": [], "epoch": [], "step": [], "sum_steps": []},
         "val": {"mse": [], "so3": [], "euler": [], "epoch": [], "step": [], "sum_steps": []},

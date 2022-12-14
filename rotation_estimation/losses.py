@@ -10,6 +10,7 @@ class OrthogonalMSELoss(_Loss):
 
     def forward(self, output: torch.Tensor, pred_matrix: torch.Tensor, true_matrix: torch.Tensor) -> torch.Tensor:
         if self.six_d:
+            # we consulted Adam W's old implementation for the next two lines of this function's code
             regularizer = torch.abs(output[:, 0, :] * output[:, 1, :]).sum(dim=1)
             return torch.mean(torch.mean((output - true_matrix[:, :2, :]) ** 2, dim=(1, 2)) + self.weight * regularizer)
 

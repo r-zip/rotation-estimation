@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import numpy as np
+
 DEFAULT_POINTS_PER_SAMPLE = 256
 DEFAULT_BATCH_SIZE = 10
 REPO_ROOT = Path(__file__).parents[1]
@@ -18,3 +20,4 @@ DEFAULT_LAYER_NORM = False
 DEFAULT_REGULARIZATION = 0.1
 
 METRICS = ["so3", "euler"]
+REGULARIZATIONS = [0.0, *np.logspace(-3, 1, 5)]

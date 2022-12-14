@@ -12,6 +12,10 @@ class TNet(nn.Module):
     Represents entire input/feature transform block.
 
     Reference: https://arxiv.org/pdf/1612.00593.pdf
+
+    We consulted the original TensorFlow implementation (link: https://github.com/charlesq34/pointnet) of this code to
+    confirm a detail about the matrix variable in `forward` that was ambiguous from the paper. However, it is otherwise
+    written with only the arXiv paper as a reference.
     """
 
     def __init__(
@@ -28,7 +32,6 @@ class TNet(nn.Module):
 
     def forward(self, points: torch.Tensor) -> torch.Tensor:
         out1 = self.mlp1(points)
-        # TODO: WHY DOES THIS WORK (dimensionally)?
         pooled = F.adaptive_max_pool2d(out1, output_size=(1, 512)).squeeze()
         matrix = self.mlp2(pooled).reshape((points.shape[0], *self.output_size))
         return torch.einsum("b p d, b d a -> b p a", points, matrix)
@@ -40,7 +43,19 @@ def build_point_net(
     layer_norm: bool = True,
     kind: str = "simplified",
 ) -> nn.Module:
+    """
+    PointNet: given a variable number of point clouds, produces a fixed-size embedding.
+
+    References:
+        PointNet paper: https://arxiv.org/pdf/1612.00593.pdf
+        SVD for deep rotation estimation paper:
+            https://papers.nips.cc/paper/2020/hash/fec3392b0dc073244d38eba1feb8e6b7-Abstract.html
+
+    The latter paper uses the same sort of "simplified point net" architecture (perhaps slightly different from ours).
+    The simplified PointNet is essentially a MLP with global max-pooling.
+    """
     if kind == "simplified":
+        # "simplified PointNet" from the SVD paper
         return nn.Sequential(
             nn.Linear(3, 128),
             nn.ReLU(),
@@ -52,7 +67,7 @@ def build_point_net(
             nn.Flatten(),
         )
 
-    # original architecture
+    # original architecture from the PointNet paper
     return nn.Sequential(
         TNet(layer_norm=layer_norm),
         build_mlp(3, 64, [64], layer_norm=layer_norm, final_activation=nn.ReLU()),
