@@ -20,9 +20,9 @@ def combine_histories(history_dir: Path) -> List[Dict[str, np.ndarray]]:
                 train=dict(mse=[], so3=[], euler=[], epoch=[], step=[], sum_steps=[]),
                 val=dict(mse=[], so3=[], euler=[], epoch=[], step=[], sum_steps=[]),
             )
-            for history_file in sorted(
-                [f for f in history_dir.glob("*.json") if f.stem.startswith(f"{dim}_d_{reg}_history")]
-            ):
+            history_files = list(history_dir.glob(f"{dim}_d_{reg}_history*.json"))
+
+            for history_file in sorted(history_files):
                 with open(history_file) as f:
                     history = json.load(f)
 
@@ -42,6 +42,7 @@ def combine_histories(history_dir: Path) -> List[Dict[str, np.ndarray]]:
                             dict(
                                 dim=dim,
                                 reg=reg,
+                                multi_head=False,
                                 split=split,
                                 key=key,
                                 mean=mean,
@@ -50,6 +51,42 @@ def combine_histories(history_dir: Path) -> List[Dict[str, np.ndarray]]:
                                 ends=np.array(history_all_runs[split][key])[:, -1],
                             )
                         )
+
+    history_all_runs = dict(
+        train=dict(mse=[], so3=[], euler=[], epoch=[], step=[], sum_steps=[]),
+        val=dict(mse=[], so3=[], euler=[], epoch=[], step=[], sum_steps=[]),
+    )
+    history_files = list(history_dir.glob(f"multi_head_0.0_history*.json"))
+
+    for history_file in sorted(history_files):
+        with open(history_file) as f:
+            history = json.load(f)
+
+        for split in history.keys():
+            for key in history[split]:
+                history_all_runs[split][key].append(history[split][key])
+
+    # average and compute error bars
+    for split in history_all_runs.keys():
+        for key in history_all_runs[split]:
+            history_all_runs[split][key] = [h for h in history_all_runs[split][key] if h]
+            if history_all_runs[split][key]:
+                mean = np.nanmean(history_all_runs[split][key], axis=0)
+                median = np.nanmedian(history_all_runs[split][key], axis=0)
+                quartiles = np.quantile(history_all_runs[split][key], [0.25, 0.75], axis=0)
+                summaries.append(
+                    dict(
+                        dim="six",
+                        reg=0.0,
+                        multi_head=True,
+                        split=split,
+                        key=key,
+                        mean=mean,
+                        median=median,
+                        quartiles=quartiles,
+                        ends=np.array(history_all_runs[split][key])[:, -1],
+                    )
+                )
 
     return summaries
 
@@ -120,6 +157,20 @@ def main(history_dir: Path, plots_dir: Path = Path("./plots")):
                     six_d_val=six_d_val_final_mean,
                 )
             )
+
+        multi_head_train = [s for s in summaries if s["multi_head"] and s["split"] == "train" and s["key"] == key][0]
+        multi_head_val = [s for s in summaries if s["multi_head"] and s["split"] == "val" and s["key"] == key][0]
+        steps = np.arange(len(multi_head_train["mean"]))
+        plt.plot(steps, multi_head_train["mean"])
+        plt.fill_between(steps, multi_head_train["quartiles"][0], multi_head_train["quartiles"][1], alpha=0.3)
+        plt.plot(steps, multi_head_val["mean"])
+        plt.fill_between(steps, multi_head_val["quartiles"][0], multi_head_val["quartiles"][1], alpha=0.3)
+        plt.title("Multi-head with $\\lambda=0.0$")
+        plt.ylabel(key)
+        plt.xlabel("SGD step count")
+        plt.legend(["train", "train quartiles", "val", "val quartiles"])
+        plt.savefig(plots_dir / f"multi_head_{key}_0.0.png", dpi=300)
+        plt.close()
 
     print(pd.DataFrame(records))
 
