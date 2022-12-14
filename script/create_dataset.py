@@ -21,12 +21,15 @@ for split, loader in tqdm([("train", train_loader), ("val", val_loader), ("test"
     split_dir = processed_data_dir / split
     split_dir.mkdir(exist_ok=True)
 
-    for k, (model_name, original_point_cloud, rotated_point_cloud, rotation) in enumerate(tqdm(loader)):
+    for k, (model_name, original_point_cloud, rotated_point_cloud, pre_rotation, rotation) in enumerate(loader):
+        if type(model_name) is tuple:
+            model_name = model_name[0]
         torch.save(
             {
                 "model": model_name,
                 "original_point_cloud": original_point_cloud.squeeze(),
                 "rotated_point_cloud": rotated_point_cloud.squeeze(),
+                "pre_rotation": pre_rotation.squeeze(),
                 "rotation": rotation.squeeze(),
             },
             split_dir / f"sample_{k}.pt",

@@ -33,7 +33,7 @@ def so3_distance(P: torch.Tensor, Q: torch.Tensor, unit: str = "radians") -> tor
 def compute_metrics(pred: torch.Tensor, truth: torch.Tensor) -> Dict[str, float]:
     with torch.no_grad():
         try:
-            so3 = so3_distance(pred, truth).sum().item()
+            so3 = so3_distance(pred, truth, unit="degrees").mean().item()
         except ValueError:
             so3 = np.nan
         return {"so3": so3, "euler": np.nan, "n": pred.shape[0]}
