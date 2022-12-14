@@ -5,7 +5,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.optim import Adam
-from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
 
 from .constants import DEFAULT_EPOCHS, DEFAULT_LR, METRICS, MODEL_PATH
@@ -23,7 +22,6 @@ def train(
     loss_fn: Callable = F.mse_loss,
 ) -> Dict[str, Dict[str, List[float]]]:
     optimizer = Adam(model.parameters(), lr=lr)
-    scheduler = CosineAnnealingLR(optimizer, T_max=10, eta_min=1e-9)
 
     # this loop is based on https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html#train-the-network
     history = {
@@ -94,8 +92,6 @@ def train(
                 val_metrics.clear()
 
             sum_steps += 1
-
-        scheduler.step()
 
     if model_path is None:
         model_path = MODEL_PATH / "model.pt"

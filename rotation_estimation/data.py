@@ -18,6 +18,9 @@ if torch.__version__.startswith("1.12"):
             num_points: int = 256,
             device: str = "cpu",
             dataset_size: int = 10_000,
+            pre_rotate: bool = False,
+            re_sample: bool = True,
+            center: bool = False,
         ) -> None:
             self.num_points = num_points
             self.split_dir = SPLITS_PATH / split
@@ -34,23 +37,53 @@ if torch.__version__.startswith("1.12"):
             self.models = models
             self.num_models = len(models)
             self.dataset_size = dataset_size
+            self.pre_rotate = pre_rotate
+            self.re_sample = re_sample
+
+            point_clouds = []
+            if not self.re_sample:
+                for mesh in self.meshes:
+                    point_cloud = sample_points_from_meshes(
+                        mesh,
+                        num_samples=self.num_points,
+                        return_normals=False,
+                        return_textures=False,
+                    ).squeeze()
+                    if center:
+                        point_cloud = point_cloud - point_cloud.mean()
+                    point_clouds.append(point_cloud)
+                self.point_clouds = point_clouds
+            else:
+                self.point_clouds = None
 
         def __len__(self) -> int:
             return self.dataset_size
 
         @torch.no_grad()
         def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-            point_cloud = sample_points_from_meshes(
-                self.meshes[idx % self.num_models],
-                num_samples=self.num_points,
-                return_normals=False,
-                return_textures=False,
-            ).squeeze()
+            if self.re_sample:
+                point_cloud = sample_points_from_meshes(
+                    self.meshes[idx % self.num_models],
+                    num_samples=self.num_points,
+                    return_normals=False,
+                    return_textures=False,
+                ).squeeze()
+            else:
+                point_cloud = self.point_clouds[idx % self.num_models]
+
             rotation_matrix = random_rotation()
+            if self.pre_rotate:
+                pre_rotation_matrix = random_rotation()
+                pre_rotated = point_cloud @ pre_rotation_matrix.T
+            else:
+                pre_rotation_matrix = torch.eye(3)
+                pre_rotated = point_cloud
+
             return (
                 self.models[idx % self.num_models],
-                point_cloud,
-                torch.matmul(point_cloud, rotation_matrix),
+                pre_rotated,
+                pre_rotated @ rotation_matrix.T,
+                pre_rotation_matrix,
                 rotation_matrix,
             )
 

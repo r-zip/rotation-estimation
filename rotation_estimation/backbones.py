@@ -42,12 +42,12 @@ def build_point_net(
 ) -> nn.Module:
     if kind == "simplified":
         return nn.Sequential(
-            nn.Linear(3, 256),
+            nn.Linear(3, 128),
             nn.ReLU(),
-            nn.Linear(256, 512),
+            nn.Linear(128, 64),
             nn.ReLU(),
-            nn.AdaptiveMaxPool2d(output_size=(1, 512)),
-            nn.Linear(512, output_dimension),
+            nn.AdaptiveMaxPool2d(output_size=(1, 64)),
+            nn.Linear(64, output_dimension),
             nn.ReLU(),
             nn.Flatten(),
         )
