@@ -1,4 +1,4 @@
-## projection-estimation
+## rotation-estimation
 
 ### Setup
 
