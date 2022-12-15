@@ -31,6 +31,7 @@ if torch.__version__.startswith("1.12"):
             for folder in self.split_dir.iterdir():
                 models.append(folder.name)
                 obj_file = folder / "models" / "model_normalized.obj"
+                # reference for line below: https://pytorch3d.org/docs/io
                 meshes.append(IO().load_mesh(obj_file, device=device))
 
             self.meshes = meshes
