@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 
 from rotation_estimation.constants import (DEFAULT_BATCH_SIZE, DEFAULT_EPOCHS,
                                            DEFAULT_LAYER_NORM, DEFAULT_LR,
-                                           DEFAULT_REGULARIZATION,
+                                           DEFAULT_REGULARIZATION, MODEL_PATH,
                                            REGULARIZATIONS, RESULTS_PATH)
 from rotation_estimation.data import ProcessedDataset
 from rotation_estimation.losses import OrthogonalMSELoss
@@ -62,18 +62,24 @@ def train_once(
     # TODO: run on test set
     # test_loader = DataLoader(dataset=test_set, batch_size=batch_size, shuffle=True)
 
-    history = train(model, train_loader, val_loader, loss_fn=loss_fn, lr=lr, epochs=epochs)
+    history, model = train(model, train_loader, val_loader, loss_fn=loss_fn, lr=lr, epochs=epochs)
 
     RESULTS_PATH.mkdir(exist_ok=True)
     if six_d:
         with open(RESULTS_PATH / f"six_d_{regularization}_history_{iteration}.json", "w") as f:
             json.dump(history, f)
+
+        torch.save(model, MODEL_PATH / f"six_d_{regularization}_{iteration}.pt")
     elif multi_head:
         with open(RESULTS_PATH / f"multi_head_{regularization}_history_{iteration}.json", "w") as f:
             json.dump(history, f)
+
+        torch.save(model, MODEL_PATH / f"multi_head_{regularization}_{iteration}.pt")
     else:
         with open(RESULTS_PATH / f"nine_d_{regularization}_history_{iteration}.json", "w") as f:
             json.dump(history, f)
+
+        torch.save(model, MODEL_PATH / f"nine_d_{regularization}_{iteration}.pt")
 
 
 def main(
