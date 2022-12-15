@@ -7,15 +7,16 @@ import numpy as np
 import pandas as pd
 import typer
 
+from rotation_estimation.constants import REGULARIZATIONS
+
 DIMS = ["six", "nine"]
-REGS = [0.0, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]
 KEYS = ["mse", "so3"]
 
 
 def combine_histories(history_dir: Path) -> List[Dict[str, np.ndarray]]:
     summaries = list()
     for dim in DIMS:
-        for reg in REGS:
+        for reg in REGULARIZATIONS:
             history_all_runs = dict(
                 train=dict(mse=[], so3=[], euler=[], epoch=[], step=[], sum_steps=[]),
                 val=dict(mse=[], so3=[], euler=[], epoch=[], step=[], sum_steps=[]),
@@ -98,7 +99,7 @@ def main(history_dir: Path, plots_dir: Path = Path("./plots")):
     summaries = combine_histories(history_dir)
     records = []
     for key in KEYS:
-        for reg in REGS:
+        for reg in REGULARIZATIONS:
             nine_d_train = [
                 s
                 for s in summaries

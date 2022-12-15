@@ -5,6 +5,7 @@ import torch.nn as nn
 
 from .backbones import build_point_net
 from .blocks import build_mlp
+from .constants import DEFAULT_HEAD_HIDDEN_LAYER_SIZES
 from .projections import gram_schmidt, svd_projection
 from .utils import identity
 
@@ -18,7 +19,7 @@ class MultiHead(nn.Module):
         siamese: bool = True,
     ) -> None:
         super().__init__()
-        head_hidden_layer_sizes = head_hidden_layer_sizes or [128, 64]
+        head_hidden_layer_sizes = head_hidden_layer_sizes or DEFAULT_HEAD_HIDDEN_LAYER_SIZES
         self.projection = svd_projection
         self.input_dimension = 2 * point_net_embedding_dim if siamese else point_net_embedding_dim
         self.mlps = [
@@ -75,7 +76,7 @@ class MultiHead(nn.Module):
 class PointNetRotationRegression(nn.Module):
     def __init__(
         self,
-        point_net_embedding_dim: int = 32,
+        point_net_embedding_dim: int = 2048,
         head_hidden_layer_sizes: List[int] = None,
         layer_norm: bool = False,
         point_net: str = "simplified",
@@ -90,7 +91,7 @@ class PointNetRotationRegression(nn.Module):
         self.siamese = siamese
         self.multi_head = multi_head
 
-        head_hidden_layer_sizes = head_hidden_layer_sizes or [128, 64]
+        head_hidden_layer_sizes = head_hidden_layer_sizes or DEFAULT_HEAD_HIDDEN_LAYER_SIZES
 
         self.point_net = build_point_net(
             output_dimension=point_net_embedding_dim,
@@ -101,7 +102,7 @@ class PointNetRotationRegression(nn.Module):
 
         if self.multi_head:
             self.head = MultiHead(
-                point_net_embedding_dim=32,
+                point_net_embedding_dim=point_net_embedding_dim,
                 head_hidden_layer_sizes=head_hidden_layer_sizes,
                 layer_norm=layer_norm,
                 siamese=siamese,

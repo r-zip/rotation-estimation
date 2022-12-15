@@ -33,7 +33,7 @@ def gram_schmidt(x: torch.Tensor) -> torch.Tensor:
     """
     Perform Gram-Schmidt to obtain valid rotation matrices (element of SO(3)).
 
-    References:
+    This code was written from scratch using the following resources:
         https://en.wikipedia.org/wiki/Gram–Schmidt_process#The_Gram–Schmidt_process
         https://arxiv.org/pdf/1812.07035.pdf
     """
