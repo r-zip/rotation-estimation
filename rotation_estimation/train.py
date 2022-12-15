@@ -97,9 +97,4 @@ def train(
 
             sum_steps += 1
 
-    if model_path is None:
-        model_path = MODEL_PATH / "model.pt"
-
-    torch.save(model, model_path)
-
-    return history
+    return history, model
