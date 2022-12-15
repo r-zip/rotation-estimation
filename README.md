@@ -22,6 +22,8 @@ Now you should be able to run the code. Alternatively, you can install pytorch3d
 
 We are using the [ShapeNetCore dataset](https://shapenet.org). Once downloaded, you will need to use the scripts `script/create_splits.py` and `scripts/create_dataset.py` to create the processed dataset for training.
 
+You will need to install [PyTorch3D](https://github.com/facebookresearch/pytorch3d/blob/main/INSTALL.md) to complete this step.
+
 #### Testing
 
 To ensure you've installed everything correctly and data is where it is supposed to be, run
