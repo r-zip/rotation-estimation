@@ -1,4 +1,4 @@
-## projection-estimation
+## projection-estimation manual
 
 ### Setup
 
