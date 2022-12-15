@@ -16,8 +16,6 @@ pip install "git+https://github.com/facebookresearch/pytorch3d.git@stable"
 pip install -e .
 ```
 
-Now you should be able to run the code. Alternatively, you can install pytorch3d with CUDA support, if you have a compatible graphics card.
-
 #### Dataset
 
 We are using the [ShapeNetCore dataset](https://shapenet.org). Once downloaded, you will need to use the scripts `script/create_splits.py` and `scripts/create_dataset.py` to create the processed dataset for training.
