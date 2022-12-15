@@ -2,17 +2,22 @@ import json
 from enum import Enum
 from typing import Optional
 
-import numpy as np
 import torch
 import torch.autograd
 import torch.backends
 import typer
 from torch.utils.data import DataLoader
 
-from rotation_estimation.constants import (DEFAULT_BATCH_SIZE, DEFAULT_EPOCHS,
-                                           DEFAULT_LAYER_NORM, DEFAULT_LR,
-                                           DEFAULT_REGULARIZATION, MODEL_PATH,
-                                           REGULARIZATIONS, RESULTS_PATH)
+from rotation_estimation.constants import (
+    DEFAULT_BATCH_SIZE,
+    DEFAULT_EPOCHS,
+    DEFAULT_LAYER_NORM,
+    DEFAULT_LR,
+    DEFAULT_REGULARIZATION,
+    MODEL_PATH,
+    REGULARIZATIONS,
+    RESULTS_PATH,
+)
 from rotation_estimation.data import ProcessedDataset
 from rotation_estimation.losses import OrthogonalMSELoss
 from rotation_estimation.models import PointNetRotationRegression
@@ -52,15 +57,11 @@ def train_once(
 
     train_set = ProcessedDataset(split="train", device=device)
     val_set = ProcessedDataset(split="val", device=device)
-    test_set = ProcessedDataset(split="test", device=device)
 
     loss_fn = OrthogonalMSELoss(six_d, regularization)
 
     train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(dataset=val_set, batch_size=batch_size, shuffle=True)
-
-    # TODO: run on test set
-    # test_loader = DataLoader(dataset=test_set, batch_size=batch_size, shuffle=True)
 
     history, model = train(model, train_loader, val_loader, loss_fn=loss_fn, lr=lr, epochs=epochs)
 
